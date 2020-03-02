@@ -249,6 +249,8 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--exercise", help="grading an exercise")
     parser.add_argument("-p", "--project", help="grading a project")
     parser.add_argument("-hw", "--homework", help="grading a homework")
+    parser.add_argument(
+        "-v", "--version", help="display the current version", action='store_true')
     args = parser.parse_args()
 
     asgmt_path = "."
@@ -256,6 +258,10 @@ if __name__ == "__main__":
     # 0 is exercise, 1 is project, 2 is homework
     asgmt_type = ASGMT_EX
     asgmt_num = 0
+
+    if args.version:
+        print(open("./VERSION").read())
+        exit(0)
 
     if args.exercise:
         asgmt_path = os.path.join("exercises", f"day{args.exercise.zfill(2)}")

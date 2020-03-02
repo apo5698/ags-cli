@@ -15,6 +15,7 @@ class Color:
     CYAN = 96
     WHITE = 97
 
+
     @staticmethod
     def colorize(color, msg):
         """ Return msg with specified color. 

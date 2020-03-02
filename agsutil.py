@@ -1,6 +1,4 @@
 from datetime import date
-import logging
-import os
 
 import yaml
 
@@ -50,7 +48,3 @@ def get_setting(setting):
     """ Return the value of any item in settings. """
 
     return __global_config__[1].get(setting)
-
-
-def log(file):
-    logging.basicConfig("qwe")

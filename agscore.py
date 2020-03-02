@@ -4,11 +4,9 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 
 import agsmsg as msg
 import agsutil as util
-
 
 # Constants
 ASGMT_EX = 0
@@ -23,7 +21,7 @@ def precheck():
     msg.info(f"Link: {util.get_link(asgmt_type, asgmt_num)}")
 
     option = msg.prompt_yn("Continue?")
-    if option == False:
+    if not option:
         print("🌞 Bye~")
         exit(0)
 
@@ -51,8 +49,10 @@ def rename():
 
     for entry in os.scandir("."):
         if "_assignsubmission_file_" not in entry.name:
-            msg.warn("Already renamed. "
-                     "If not, remove /view and unzip view.zip again", "")
+            msg.warn(
+                    "Already renamed. If not, remove /view and unzip view.zip "
+                    "again",
+                    "")
             input()
             return
 
@@ -85,10 +85,10 @@ def javac(file):
     if os.system(f"javac -d bin -cp bin \"{file}\"{redirect}") != 0:
         msg.fail("Compile failed")
         option = msg.prompt_yn("Compile again?")
-        if option == False:
+        if not option:
             msg.warn("Skipped")
             return
-        javac(file, True)
+        javac(file)
 
 
 def javac_all():
@@ -165,9 +165,12 @@ def run_all():
         os.chdir(entry)
 
         msg.name(entry.name)
-        for _entry in sorted(os.scandir("bin"), key=lambda f: f.name, reverse=True):
+        for _entry in sorted(os.scandir("bin"), key=lambda f: f.name,
+                             reverse=True):
             _name = _entry.name
-            if _entry.is_file() and not _name.startswith("DrawingPanel") and not _name.startswith("TS_") and _name.endswith(".class"):
+            if _entry.is_file() and not _name.startswith(
+                    "DrawingPanel") and not _name.startswith(
+                    "TS_") and _name.endswith(".class"):
                 run(_name)
         os.chdir("..")
 
@@ -176,9 +179,10 @@ def run_all():
 
 
 def checkstyle(file, grep="", grep_option=""):
-    cmd = f"var=$({cs_path} {file} | grep {grep_option} '{grep}' -c) ; ((var-=4)) ; echo \"$var\""
-    proc = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cmd = f"var=$({cs_path} {file} | grep {grep_option} '{grep}' -c) ; ((" \
+          f"var-=4)) ; echo \"$var\""
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
     out, err = proc.communicate()
     return out.decode("ascii").strip()
 
@@ -207,7 +211,6 @@ def hw(num):
     msg.info("Checking homework...")
     for root, dirs, files in os.walk("."):
         for student in sorted(dirs):
-            msg.temp(student)
             os.chdir(student)
             msg.info("Opening...")
 
@@ -224,9 +227,11 @@ def hw(num):
                     if item == skip_index:
                         msg.warn("Skipped", "")
                         break
-                    while os.system(f"open \"{files1[item - 1]}\" &> /dev/null") != 0:
+                    while os.system(
+                            f"open \"{files1[item - 1]}\" &> /dev/null") != 0:
                         msg.fail(
-                            f"No application can open {msg.underline(files1[item - 1])}")
+                                f"No application can"
+                                f" open {msg.underline(files1[item - 1])}")
                         for i, f in enumerate(files1):
                             msg.warn_index(i + 1, f)
                         msg.warn_index(skip_index, "Skip")
@@ -244,13 +249,13 @@ def hw(num):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="The automatic grading script for CSC 116. "
-                    "GitHub Repository: https://github.com/apo5698/AGS")
+            description="The automatic grading script for CSC 116. "
+                        "GitHub Repository: https://github.com/apo5698/AGS")
     parser.add_argument("-e", "--exercise", help="grading an exercise")
     parser.add_argument("-p", "--project", help="grading a project")
     parser.add_argument("-hw", "--homework", help="grading a homework")
-    parser.add_argument(
-        "-v", "--version", help="display the current version", action='store_true')
+    parser.add_argument("-v", "--version", help="display the current version",
+                        action='store_true')
     args = parser.parse_args()
 
     asgmt_path = "."
@@ -293,5 +298,5 @@ if __name__ == "__main__":
     if asgmt_type == ASGMT_HW:
         hw(args.homework)
     else:
-        # javac_all()
+        javac_all()
         run_all()

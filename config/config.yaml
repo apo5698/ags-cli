@@ -1,0 +1,39 @@
+links:
+  day01: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/HelloWorld.pdf
+  day02: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/IntroToJavaProceduralComposition.pdf
+  day03: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/BMICalculator.pdf
+  day04: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/forLoops.pdf
+  day05: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/NestedLoopsAndMethods.pdf
+  day06: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/UsingObjects.pdf
+  day07: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/Graphics.pdf
+  day08: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/GradeCalculatorProgram.pdf
+  day09: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/TextProcessing.pdf
+  day11: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/SoftwareTesting.pdf
+  day13: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/FunWithFiles.pdf
+  day15: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/WorkingWithOutputFiles.pdf
+  day16: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ArraysAndStatistics.pdf
+  day17: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ArrayParametersAndReturnValues.pdf
+  day18: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/2DArraysAndClasses.pdf
+  day19: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/WeatherInfo.pdf
+  day21: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/InteractingClasses.pdf
+  day22: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/CSC116Review.pdf
+  day23: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/Project6.pdf
+  day24: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ComprehensiveExercisePart1.html
+  day25: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ComprehensiveExercisePart2.html
+  day26: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ComprehensiveExercisePart3.html
+  day27: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Exercises/ComprehensiveExercisePresentationDemo.html
+  p1: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project1/index
+  p2: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project2/index
+  p3: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project3/index
+  p4: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project4/index
+  p5: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project5/index
+  p6: https://pages.github.ncsu.edu/engr-csc116-staff/%SEMESTER%/projects/project6/index
+  hw1: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Homework/homework1.html
+  hw2: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Homework/homework2.html
+  hw3: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Homework/homework3.html
+  hw4: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Homework/homework4.html
+
+settings:
+  lib: "lib"
+  checkstyle: "~/Developer/NCSU/cs-checkstyle/checkstyle"
+  ts-test-path: "ts-test"

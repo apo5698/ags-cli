@@ -1,5 +1,5 @@
 import argparse
-import distutils.dir_util as dir_util
+import distutils.dir_util
 import glob
 import os
 import re
@@ -26,12 +26,11 @@ def precheck():
     if not os.path.exists('submission'):
         if len(glob.glob('CSC 116*.zip')) == 0:
             return 1
-        msg.info('Extracting...', '')
+        msg.info('Extracting...')
         g = glob.glob('CSC 116*.zip')
         if len(g) == 1:
             with zipfile.ZipFile(g[0]) as file:
                 file.extractall('submission')
-                print('done')
     os.chdir('submission')
     return 0
 
@@ -74,9 +73,7 @@ def javac_all():
             javac(file)
         os.chdir('..')
 
-    print()
-    msg.info('Compiling done')
-    input()
+    msg.press_continue()
 
 
 def javac(file, lib='.:../../../../../lib/*'):
@@ -107,10 +104,9 @@ def javac(file, lib='.:../../../../../lib/*'):
     if rc != 0:
         print()
         msg.fail(f'Failed to compile {msg.underline(file)} by using:')
-        print(f'       {cmd}', end='')
-        input()
-    else:
-        print('done')
+        print(f'       {cmd}')
+        if msg.ask_retry():
+            javac(file)
 
     return rc
 
@@ -124,7 +120,7 @@ def java(file, arg=''):
     if os.system(cmd) != 0:
         msg.fail(f'Failed to run {file} by using:')
         print(f'       {" ".join(cmd.split())}')
-        if msg.ask_yn('Run again?'):
+        if msg.ask_retry():
             java(file)
 
 
@@ -136,7 +132,6 @@ def java_all():
     for student in os.scandir('.'):
         if not student.is_dir():
             continue
-    msg.info('Running done')
 
 
 def ts_test():
@@ -158,53 +153,122 @@ def ts_test():
         msg.name(student.name)
 
         msg.info('Copying TS files...')
-        dir_util.copy_tree('../../files', '.')
-        # Compile
-        msg.info('Compiling source code...')
-        src_files = util.conf_as('file')
-        for f in src_files:
-            javac(f, '.:*')
-            if 'Test.java' in f:
-                java(f, '-cp ".:*" org.junit.runner.JUnitCore')
-            else:
-                java(f)
-        msg.info('Done')
-        input()
-        # TSBBT
-        msg.info('Compiling TS_BB_tests...')
-        for f in sorted(glob.glob('TS*BB*.java')):
-            javac(f, '.:*')
-            java(f, '-cp .:* org.junit.runner.JUnitCore')
-        msg.info('Done')
-        input()
-        # TSWBT
-        msg.info('Compiling TS_WB_tests...')
-        l = glob.glob('TS_*_WB_Runner.java')
-        javac(l[0], '.:*')
-        java(l[0], '-cp .:*')
-        msg.info('Done')
-        input()
-        # Inspection
-        msg.info('Opening source code...')
-        for f in src_files:
+        distutils.dir_util.copy_tree('../../files', '.')
+
+        src = util.conf_as('src')
+        for f in src:
+            msg.info(f'Opening {msg.underline(f)}...')
             sp.Popen(['open', f])
+
+        test = util.conf_as('test')
+        for f in test:
+            msg.info(f'Opening {msg.underline(f)}...')
+            sp.Popen(['open', f])
+
+        total = util.conf_as('src') + util.conf_as('test')
+
+        for item in util.conf_as('order'):
+            # Custom run is a dict: {'custom run' : [..., ...]}
+            if type(item) is dict:
+                _item = next(iter(item))
+                msg.info(f'Current grading: {msg.underline(_item)}')
+                cmds = item.get(_item)
+                run_custom(cmds)
+                return
+
+            _item = item.lower()
+            msg.info(f'Current grading: {msg.underline(item)}')
+            if _item == 'wce':
+                ts_wce()
+            elif _item == 'tsbbt':
+                ts_tsbbt()
+            elif _item == 'tswbt':
+                ts_tswbt()
+            elif _item == 'bbt':
+                ts_bbt()
+            elif _item == 'wbt':
+                ts_wbt(test)
+            elif _item == 'style' or _item == 'checkstyle':
+                cs = checkstyle(total)
+                if cs == 0:
+                    msg.info('No checkstyle error found')
+                else:
+                    msg.warn(f'{cs} checkstyle errors found')
+
+        msg.info('Finish TS testing for current student')
+        msg.press_continue()
         input()
         os.chdir('..')
-    msg.info('Running done')
 
 
-def checkstyle():
-    cmd = 'var1=$(~/cs-checkstyle/checkstyle TabConverter.java |' \
-          'sgrep '' -c);' \
-          '((var1-=4));' \
-          'echo "src errors=$var1";' \
-          'var2=$(~/cs-checkstyle/checkstyle TabConverterTest.java |' \
-          'grep -v "magic number" -c);' \
-          '((var2-=4));' \
-          'echo "test errors=$var2";' \
-          '((var3=var1+var2));' \
-          'echo "total errors=$var3"'
-    pass
+def ts_wce():
+    msg.info('Compiling files...')
+    msg.info(f'Current grading: {msg.underline("src")}')
+    for f in util.conf_as('src'):
+        javac(f, '.:*')
+        java(f)
+    msg.press_continue()
+    msg.info(f'Current grading: {msg.underline("test")}')
+    for f in util.conf_as('test'):
+        javac(f, '.:*')
+        java(f)
+    msg.press_continue()
+
+
+def ts_tsbbt():
+    msg.info('Compiling TS_BBT...')
+    for f in sorted(glob.glob('TS*BB*.java')):
+        javac(f, '.:*')
+        java(f, '-cp .:* org.junit.runner.JUnitCore')
+    msg.press_continue()
+
+
+def ts_tswbt():
+    msg.info('Compiling TS_WBT...')
+    ts = glob.glob('TS_*_WB_Runner.java')
+    javac(ts[0], '.:*')
+    java(ts[0], '-cp .:*')
+    msg.press_continue()
+
+
+def ts_bbt():
+    pdf = glob.glob('*.pdf')
+    msg.info(f'Opening {pdf[0]}...')
+    sp.Popen(['open', pdf[0]])
+
+    cmd = None
+    while msg.ask_yn('Continue running?'):
+        msg.info(f'Current command: {msg.underline(cmd)}')
+        if cmd is None:
+            msg.info('Enter a command to execute: ')
+            cmd = input()
+        else:
+            if msg.ask_yn('Change the current command?'):
+                cmd = input()
+            else:
+                msg.info('No change')
+        msg.info(f'Running {cmd}...')
+        os.system(cmd)
+
+
+def ts_wbt(test):
+    for f in test:
+        msg.info(f'Running {msg.underline(f)}...')
+        # while sp.call(['javac', '-cp', '.:*', f]) != 0:
+        javac(f)
+        java(f)
+        # sp.call(['java', '-cp', '.:*', 'org.junit.runner.JUnitCore', f])
+
+
+def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
+    sum = 0
+    for f in files:
+        cmd = f'{cs} {f} | grep -c ""'
+        proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+        out, err = proc.communicate()
+        out = out.decode('utf-8')
+        sum += int(out)
+    return sum
 
 
 def hw(num):
@@ -242,10 +306,16 @@ def hw(num):
                             msg.warn('Skipped', '')
                             break
                     msg.info('Opening')
-            else:
-                msg.info('Done')
             os.chdir('..')
             input()
+
+
+def run_custom(cmds):
+    for c in cmds:
+        while os.system(c) != 0:
+            msg.fail(f'Failed to run {msg.underline(c)}')
+            if not msg.ask_retry():
+                break
 
 
 if __name__ == '__main__':

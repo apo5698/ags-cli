@@ -9,13 +9,11 @@ class Style:
         CYAN = 96
         WHITE = 97
 
-
     # Font style
     BOLD = 1
     ITALIC = 2
     UNDERLINE = 4
     STRIKETHROUGH = 9
-
 
     @staticmethod
     def stylize(color, msg):
@@ -57,6 +55,11 @@ def name(msg, color=Style.Color.PURPLE):
     print(f'{Style.stylize(color, f"[NAME]")} {msg}')
 
 
+def press_continue(button='return'):
+    info(f'Press <{button}> to continue')
+    input()
+
+
 def warn_index(index, msg, color=Style.Color.YELLOW):
     """ Print "[`index`] message" (Yellow). """
 
@@ -95,6 +98,10 @@ def ask_yn(msg, msgtype='info'):
         fail(f'Invalid option: {option}. Please try again: ', '')
         option = input().lower()
     return True if option == 'y' else False
+
+
+def ask_retry():
+    ask_yn('Retry?')
 
 
 def ask_index(start, end):

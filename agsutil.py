@@ -5,7 +5,7 @@ import yaml
 import agsmsg as msg
 
 
-def __semester__():
+def current_semester():
     """ Return the current semester.\n
     Format: `yyyy-semester`. For example: 2019-fall, 2020-spring
     """
@@ -33,7 +33,7 @@ def read_config_glob(config="config/config.yaml"):
     links = temp[0]
     for li in links:
         if li.startswith("p"):
-            links[li] = links.get(li).replace("%SEMESTER%", __semester__())
+            links[li] = links.get(li).replace("%SEMESTER%", current_semester())
     settings = temp[1]
 
     global __global_config__

@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
     # Path and config
     path_as = os.path.join('content', as_cat, f'{as_name}{as_num}')
-    path_as_conf = path_as.replace('content', 'config') + '.yaml'
+    path_as_conf = f'{path_as.replace("content", "config")}_{util.current_semester()}.yaml'
     util.read_config_glob()
     util.read_config_as(path_as_conf)
     path_cs = util.conf_glob('checkstyle')

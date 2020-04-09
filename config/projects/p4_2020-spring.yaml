@@ -1,0 +1,22 @@
+src:
+  - TabConverter.java
+test:
+  - TabConverterTest.java
+order:
+  - wce
+  - tsbbt
+  - tswbt
+  - custom run:
+      - java TabConverter < ts-test-files/input-ui-0.txt
+      - java TabConverter < ts-test-files/input-ui-1.txt
+      - java TabConverter < ts-test-files/input-ui-2.txt
+      - java TabConverter < ts-test-files/input-ui-3.txt
+      - java TabConverter < ts-test-files/input-ui-4.txt
+      - java TabConverter < ts-test-files/input-ui-5.txt
+      - java TabConverter < ts-test-files/input-ui-6.txt
+      - java TabConverter < ts-test-files/input-ui-7.txt
+      - java TabConverter < ts-test-files/input-ui-8.txt
+      - java TabConverter < ts-test-files/input-ui-9.txt
+  - bbt
+  - wbt
+  - checkstyle

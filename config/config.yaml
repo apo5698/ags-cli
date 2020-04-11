@@ -34,6 +34,7 @@ links:
   hw4: https://www.csc.ncsu.edu/courses/csc116-common/CSC116/Balik/Homework/homework4.html
 
 settings:
-  lib: "lib"
-  checkstyle: "~/Developer/NCSU/cs-checkstyle/checkstyle"
-  ts-test-path: "ts-test"
+  lib: lib
+  checkstyle: ~/Developer/NCSU/cs-checkstyle/checkstyle
+  ts-test-path: ts-test
+  open: code

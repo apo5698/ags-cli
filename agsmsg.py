@@ -101,7 +101,7 @@ def ask_yn(msg, msgtype='info'):
 
 
 def ask_retry():
-    ask_yn('Retry?')
+    return ask_yn('Retry?')
 
 
 def ask_index(start, end):

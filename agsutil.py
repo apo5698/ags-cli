@@ -1,4 +1,5 @@
 from datetime import date
+import os
 
 import yaml
 
@@ -40,12 +41,16 @@ def read_config_glob(config="config/config.yaml"):
     __global_config__ = [links, settings]
 
 
-def read_config_as(config):
+def read_config_asmt(config: str):
     """ Read the config of the assignment. """
 
-    with open(config, "r") as f:
-        global __assignment_config__
-        __assignment_config__ = yaml.load(f, Loader=yaml.FullLoader)
+    global __assignment_config__
+    if not os.path.exists(config):
+        msg.warn(f'{config} not found. Loading default config...')
+        config = f'{config.split("_")[0]}.yaml'
+
+    with open(config, 'r') as f:
+        assignment_config__ = yaml.load(f, Loader=yaml.FullLoader)
 
 
 def get_link(assignment):
@@ -64,7 +69,6 @@ def conf_as(setting):
 
 
 def init(force):
-    import os
     import shutil
 
     msg.info('Initializing...')

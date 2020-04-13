@@ -1,19 +1,19 @@
-class Style:
-    class Color:
-        BLACK = 90
-        RED = 91
-        GREEN = 92
-        YELLOW = 93
-        BLUE = 94
-        PURPLE = 95
-        CYAN = 96
-        WHITE = 97
+class style:
+    class color():
+        black = 90
+        red = 91
+        green = 92
+        yellow = 93
+        blue = 94
+        purple = 95
+        cyan = 96
+        white = 97
 
-    # Font style
-    BOLD = 1
-    ITALIC = 2
-    UNDERLINE = 4
-    STRIKETHROUGH = 9
+    class font():
+        bold = 1
+        italic = 2
+        underline = 4
+        strike = 9
 
     @staticmethod
     def stylize(color, msg):
@@ -24,16 +24,16 @@ class Style:
         return f'\33[{color}m{msg}\33[0m'
 
 
-def info(msg, ending='\n', color=Style.Color.GREEN):
+def info(msg, end='\n', color=style.color.green):
     """ Print "[INFO] message" (Green). """
 
-    print(f"{Style.stylize(color, f'[INFO] ')}{msg}", end=ending)
+    print(f'{style.stylize(color, f"[INFO]")} {msg}', end=end, flush=True)
 
 
-def fail(msg, ending='\n', color=Style.Color.RED):
+def fail(msg, end='\n', color=style.color.red):
     """ Print "[FAIL] message" (Red). """
 
-    print(f'{Style.stylize(color, f"[FAIL]")} {msg}', end=ending)
+    print(f'{style.stylize(color, f"[FAIL]")} {msg}', end=end, flush=True)
 
 
 def fatal(msg):
@@ -43,16 +43,16 @@ def fatal(msg):
     exit(1)
 
 
-def warn(msg, ending='\n', color=Style.Color.YELLOW):
+def warn(msg, end='\n', color=style.color.yellow):
     """ Print "[WARN] message" (Yellow). """
 
-    print(f'{Style.stylize(color, f"[WARN]")} {msg}', end=ending)
+    print(f'{style.stylize(color, f"[WARN]")} {msg}', end=end, flush=True)
 
 
-def name(msg, color=Style.Color.PURPLE):
+def name(msg, color=style.color.purple):
     """ Print "[NAME] message" (Purple). """
 
-    print(f'{Style.stylize(color, f"[NAME]")} {msg}')
+    print(f'{style.stylize(color, f"[NAME]")} {msg}', flush=True)
 
 
 def press_continue(button='return'):
@@ -60,10 +60,10 @@ def press_continue(button='return'):
     input()
 
 
-def warn_index(index, msg, color=Style.Color.YELLOW):
+def warn_index(index, msg, color=style.color.yellow):
     """ Print "[`index`] message" (Yellow). """
 
-    print(Style.stylize(color, f'[{index}] {msg}'))
+    print(style.stylize(color, f'[{index}] {msg}'), flush=True)
 
 
 # Methods below only return string #
@@ -71,13 +71,13 @@ def warn_index(index, msg, color=Style.Color.YELLOW):
 def bold(msg):
     """ Return the bold message. """
 
-    return Style.stylize(Style.BOLD, msg)
+    return style.stylize(style.BOLD, msg)
 
 
 def underline(msg):
     """ Return the message with underline. """
 
-    return Style.stylize(Style.UNDERLINE, msg)
+    return style.stylize(style.font.underline, msg)
 
 
 def ask_yn(msg, msgtype='info'):

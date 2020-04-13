@@ -14,13 +14,13 @@ import agsutil as util
 def precheck():
     """ Pre-check the assignment structure before starting grading. """
 
-    if not msg.ask_yn(f'Continue with {as_disp_name}?'):
+    if not msg.ask_yn(f'Continue with {msg.underline(asmt_disp_name)}?'):
         print('Bye:)')
         exit(0)
 
-    link = util.get_link(f'{as_name}{as_num}')
-    print(f'Link: {msg.underline(link)}')
-    if msg.ask_yn('Open in browser?'):
+    link = util.get_link(f'{asmt_name}{asmt_num}')
+    if msg.ask_yn('Open link in browser?'):
+        msg.info(f'Opening {msg.underline(link)}...')
         webbrowser.open_new_tab(link)
 
     if not os.path.exists('submission'):
@@ -44,16 +44,11 @@ def rename():
             return 1
 
         n = re.split('__', entry.name)[0].split(' ')
-        # Projects use [lastname firstname]
-        # But exercises and homework use [firstname lastname]
-        if not args.project:
-            n[0], n[1] = n[1], n[0]
+        # if not args.project:
+        #     n[0], n[1] = n[1], n[0]
         os.rename(entry.name, ' '.join(n))
 
-    fmt = '[lastname firstname]'
-    if not args.project:
-        fmt = '[firstname lastname]'
-    msg.info(f'Renamed to {fmt}')
+    msg.info(f'Renamed to [lastname firstname]')
 
     return 0
 
@@ -63,7 +58,7 @@ def javac_all():
 
     msg.info('Compiling...')
 
-    for student in sorted(os.scandir('.')):
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
         if not student.is_dir():
             continue
         os.chdir(student)
@@ -105,9 +100,11 @@ def javac(file, lib='.:../../../../../lib/*'):
         print()
         msg.fail(f'Failed to compile {msg.underline(file)} by using:')
         print(f'       {cmd}')
+        sp.Popen([default_open, file])
         if msg.ask_retry():
             javac(file)
-
+    else:
+        print('done')
     return rc
 
 
@@ -116,7 +113,7 @@ def java(file, arg=''):
     # TODO: Refactor
 
     msg.info(f'Running {file}...')
-    cmd = f'java {arg} {file.replace(".java", "")}'
+    cmd = f'java -cp ".:*" {arg} {file.replace(".java", "")}'
     if os.system(cmd) != 0:
         msg.fail(f'Failed to run {file} by using:')
         print(f'       {" ".join(cmd.split())}')
@@ -126,25 +123,37 @@ def java(file, arg=''):
 
 def java_all():
     """ Run all Java classes. """
-    # TODO: Refactor
 
     msg.info('Running...')
-    for student in os.scandir('.'):
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
         if not student.is_dir():
             continue
+
+        msg.name(student.name)
+        os.chdir(student.name)
+
+        conf = util.get_conf_asmt('order')
+        if conf:
+            for item in conf:
+                if type(item) is dict:
+                    _item = next(iter(item))
+                    msg.info(f'Current grading: {msg.underline(_item)}')
+                    cmds = item.get(_item)
+                    run_custom(cmds)
+                    continue
+
+        os.chdir('..')
 
 
 def ts_test():
     """ Run all teaching staff tests. """
 
     msg.info('Running teaching staff tests...')
-
     g = glob.glob('../files*')
-    if '../files' in g and '../files.zip' not in g:
-        msg.fatal('/files or files.zip not found')
-    with zipfile.ZipFile('../files.zip') as zf:
-        msg.info('Extracting files.zip...')
-        zf.extractall('../files')
+    if '../files' not in g:
+        with zipfile.ZipFile('../files.zip') as zf:
+            msg.info('Extracting files.zip...')
+            zf.extractall('../files')
 
     for student in sorted(os.scandir('.'), key=lambda s: s.name):
         if not student.is_dir():
@@ -155,26 +164,26 @@ def ts_test():
         msg.info('Copying TS files...')
         distutils.dir_util.copy_tree('../../files', '.')
 
-        src = util.conf_as('src')
+        src = util.get_conf_asmt('src')
         for f in src:
             msg.info(f'Opening {msg.underline(f)}...')
-            sp.Popen(['open', f])
+            sp.Popen([default_open, f])
 
-        test = util.conf_as('test')
+        test = util.get_conf_asmt('test')
         for f in test:
             msg.info(f'Opening {msg.underline(f)}...')
-            sp.Popen(['open', f])
+            sp.Popen([default_open, f])
 
-        total = util.conf_as('src') + util.conf_as('test')
+        total = util.get_conf_asmt('src') + util.get_conf_asmt('test')
 
-        for item in util.conf_as('order'):
+        for item in util.get_conf_asmt('order'):
             # Custom run is a dict: {'custom run' : [..., ...]}
             if type(item) is dict:
                 _item = next(iter(item))
                 msg.info(f'Current grading: {msg.underline(_item)}')
                 cmds = item.get(_item)
                 run_custom(cmds)
-                return
+                continue
 
             _item = item.lower()
             msg.info(f'Current grading: {msg.underline(item)}')
@@ -197,21 +206,20 @@ def ts_test():
 
         msg.info('Finish TS testing for current student')
         msg.press_continue()
-        input()
         os.chdir('..')
 
 
 def ts_wce():
     msg.info('Compiling files...')
     msg.info(f'Current grading: {msg.underline("src")}')
-    for f in util.conf_as('src'):
+    for f in util.get_conf_asmt('src'):
         javac(f, '.:*')
         java(f)
     msg.press_continue()
     msg.info(f'Current grading: {msg.underline("test")}')
-    for f in util.conf_as('test'):
+    for f in util.get_conf_asmt('test'):
         javac(f, '.:*')
-        java(f)
+        java(f, 'org.junit.runner.JUnitCore')
     msg.press_continue()
 
 
@@ -219,7 +227,7 @@ def ts_tsbbt():
     msg.info('Compiling TS_BBT...')
     for f in sorted(glob.glob('TS*BB*.java')):
         javac(f, '.:*')
-        java(f, '-cp .:* org.junit.runner.JUnitCore')
+        java(f, 'org.junit.runner.JUnitCore')
     msg.press_continue()
 
 
@@ -227,14 +235,19 @@ def ts_tswbt():
     msg.info('Compiling TS_WBT...')
     ts = glob.glob('TS_*_WB_Runner.java')
     javac(ts[0], '.:*')
-    java(ts[0], '-cp .:*')
+    java(ts[0])
     msg.press_continue()
 
 
 def ts_bbt():
     pdf = glob.glob('*.pdf')
+    if len(pdf) != 1:
+        msg.fail('BBTP pdf file not found')
+        input()
+        return
+
     msg.info(f'Opening {pdf[0]}...')
-    sp.Popen(['open', pdf[0]])
+    sp.Popen([util.get_conf_glob('open'), pdf[0]])
 
     cmd = None
     while msg.ask_yn('Continue running?'):
@@ -253,11 +266,8 @@ def ts_bbt():
 
 def ts_wbt(test):
     for f in test:
-        msg.info(f'Running {msg.underline(f)}...')
-        # while sp.call(['javac', '-cp', '.:*', f]) != 0:
         javac(f)
-        java(f)
-        # sp.call(['java', '-cp', '.:*', 'org.junit.runner.JUnitCore', f])
+        java(f, 'org.junit.runner.JUnitCore')
 
 
 def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
@@ -312,10 +322,13 @@ def hw(num):
 
 def run_custom(cmds):
     for c in cmds:
-        while os.system(c) != 0:
+        msg.info(f'Running {msg.underline(c)}')
+        while sp.call(c, shell=True) != 0:
             msg.fail(f'Failed to run {msg.underline(c)}')
             if not msg.ask_retry():
+                print()
                 break
+        # msg.press_continue()
 
 
 if __name__ == '__main__':
@@ -365,33 +378,34 @@ if __name__ == '__main__':
         util.init(force)
         exit()
 
-    as_name, as_cat = '', ''
-    as_num = 0
+    asmt_name, asmt_cat = '', ''
+    asmt_num = 0
     if args.exercise:
-        as_cat = 'exercises'
-        as_name = 'day'
-        as_num = args.exercise.zfill(2)
+        asmt_cat = 'exercises'
+        asmt_name = 'day'
+        asmt_num = args.exercise.zfill(2)
     elif args.project:
-        as_cat = 'projects'
-        as_name = 'p'
-        as_num = args.project
+        asmt_cat = 'projects'
+        asmt_name = 'p'
+        asmt_num = args.project
     elif args.homework:
-        as_cat = 'homework'
-        as_name = 'hw'
+        asmt_cat = 'homework'
+        asmt_name = 'hw'
         args.num = args.homework
     else:
         msg.fatal('Invalid arguments. Use -h or --help for usage.')
-    as_disp_name = f'{as_cat.capitalize()[:-1]} {as_num}'
+    asmt_disp_name = f'{asmt_cat.capitalize()[:-1]} {asmt_num}'
 
     # Path and config
-    path_as = os.path.join('content', as_cat, f'{as_name}{as_num}')
-    path_as_conf = f'{path_as.replace("content", "config")}_{util.current_semester()}.yaml'
+    path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
+    path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
     util.read_config_glob()
-    util.read_config_as(path_as_conf)
-    path_cs = util.conf_glob('checkstyle')
-    path_lib = util.conf_glob('lib')
+    util.read_config_asmt(path_asmt_conf)
+    path_cs = util.get_conf_glob('checkstyle')
+    path_lib = util.get_conf_glob('lib')
+    default_open = util.get_conf_glob('open')
 
-    os.chdir(path_as)
+    os.chdir(path_asmt)
     if precheck() != 0:
         msg.fatal('/submission or zip file not found')
     if rename() != 0:
@@ -406,4 +420,4 @@ if __name__ == '__main__':
         if not args.nocompile:
             javac_all()
         if not args.norun:
-            run_all()
+            java_all()

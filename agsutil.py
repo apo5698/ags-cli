@@ -50,7 +50,7 @@ def read_config_asmt(config: str):
         config = f'{config.split("_")[0]}.yaml'
 
     with open(config, 'r') as f:
-        assignment_config__ = yaml.load(f, Loader=yaml.FullLoader)
+        __assignment_config__ = yaml.load(f, Loader=yaml.FullLoader)
 
 
 def get_link(assignment):
@@ -58,13 +58,15 @@ def get_link(assignment):
     return __global_config__[0].get(assignment)
 
 
-def conf_glob(setting):
+def get_conf_glob(setting):
     """ Return the value of an item in global settings. """
     return __global_config__[1].get(setting)
 
 
-def conf_as(setting):
+def get_conf_asmt(setting=None):
     """ Return the value of an item in assignment settings. """
+    if setting is None:
+        print(__assignment_config__)
     return __assignment_config__.get(setting)
 
 

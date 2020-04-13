@@ -1,302 +1,423 @@
 import argparse
+import distutils.dir_util
 import glob
 import os
 import re
-import shutil
-import subprocess
+import subprocess as sp
+import webbrowser
+import zipfile
 
 import agsmsg as msg
 import agsutil as util
-
-# Constants
-ASGMT_EX = 0
-ASGMT_PR = 1
-ASGMT_HW = 2
 
 
 def precheck():
     """ Pre-check the assignment structure before starting grading. """
 
-    msg.info(f"Current assignment: {msg.underline(asgmt_path)}")
-    msg.info(f"Link: {util.get_link(asgmt_type, asgmt_num)}")
-
-    option = msg.prompt_yn("Continue?")
-    if not option:
-        print("🌞 Bye~")
+    if not msg.ask_yn(f'Continue with {msg.underline(asmt_disp_name)}?'):
+        print('Bye:)')
         exit(0)
 
-    if not os.path.exists("view"):
-        if os.path.isfile("view.zip"):
-            if os.system("unzip -q -o view.zip -d view") == 0:
-                msg.info("Unzip done")
-        else:
-            msg.fatal("/view or view.zip not found")
+    link = util.get_link(f'{asmt_name}{asmt_num}')
+    if msg.ask_yn('Open link in browser?'):
+        msg.info(f'Opening {msg.underline(link)}...')
+        webbrowser.open_new_tab(link)
 
-    os.chdir("view")
-    for root, dirs, files in os.walk("."):
-        if len(dirs) == 0:
-            msg.fatal("/view is empty")
-            continue
-        break
-
-    msg.info("Precheck done")
+    if not os.path.exists('submission'):
+        if len(glob.glob('CSC 116*.zip')) == 0:
+            return 1
+        msg.info('Extracting...')
+        g = glob.glob('CSC 116*.zip')
+        if len(g) == 1:
+            with zipfile.ZipFile(g[0]) as file:
+                file.extractall('submission')
+    os.chdir('submission')
+    return 0
 
 
 def rename():
     """ Rename all directories to [firstname lastname]. """
 
-    msg.info("Renaming...")
+    msg.info('Renaming...')
+    for entry in os.scandir('.'):
+        if '_assignsubmission_file_' not in entry.name:
+            return 1
 
-    for entry in os.scandir("."):
-        if "_assignsubmission_file_" not in entry.name:
-            msg.warn(
-                    "Already renamed. If not, remove /view and unzip view.zip "
-                    "again",
-                    "")
-            input()
-            return
+        n = re.split('__', entry.name)[0].split(' ')
+        # if not args.project:
+        #     n[0], n[1] = n[1], n[0]
+        os.rename(entry.name, ' '.join(n))
 
-        temp = re.split("__", entry.name)[0].split(" ")
+    msg.info(f'Renamed to [lastname firstname]')
 
-        # Exercises use [firstname lastname]
-        # Projects use [lastname firstname]
-        if asgmt_type != 1:
-            temp[0], temp[1] = temp[1], temp[0]
-        temp = " ".join(temp)
-        os.rename(entry.name, temp)
-
-    if asgmt_type == 1:
-        msg.info("Renamed to [lastname firstname]")
-    else:
-        msg.info("Renamed to [firstname lastname]")
-
-    input()
-
-
-def javac(file):
-    """ Compile a Java file in current directory. If not specified,
-    all Java files will be compiled to current directory by default.
-
-    """
-
-    msg.info(f"Compiling {msg.underline(file)}...")
-
-    redirect = " &> /dev/null" if not util.get_setting("stacktrace") else ""
-    if os.system(f"javac -d bin -cp bin \"{file}\"{redirect}") != 0:
-        msg.fail("Compile failed")
-        option = msg.prompt_yn("Compile again?")
-        if not option:
-            msg.warn("Skipped")
-            return
-        javac(file)
+    return 0
 
 
 def javac_all():
-    """ Compile all Java files in /src and copy to /bin. """
+    """ Compile all Java files in /src and /test, then copy to /bin. """
 
-    msg.info("Compiling...")
+    msg.info('Compiling...')
 
-    for entry in os.scandir("."):
-        if not entry.is_dir():
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
+        if not student.is_dir():
             continue
-        os.chdir(entry)
+        os.chdir(student)
 
-        msg.name(entry.name)
-        if not os.path.exists("src"):
-            os.mkdir("src")
-        if not os.path.exists("bin"):
-            os.mkdir("bin")
+        msg.name(student.name)
+        for file in glob.glob('*.java', recursive=True):
+            javac(file)
+        os.chdir('..')
 
-        if asgmt_type == 1 and asgmt_num == 2:
-            msg.info(f"Compiling {msg.underline('DrawingPanel.java')}...")
-            dp = os.path.join(lib_path, "DrawingPanel.java")
-            os.system(f"javac -d bin -cp bin \"{dp}\"")
-
-        sources = glob.glob(os.path.join(os.getcwd(), "*.java"))
-        for file in sources:
-            shutil.move(file, "src")
-        for _entry in sorted(os.scandir("src"), key=lambda f: f.name):
-            if _entry.is_file() and _entry.name.endswith(".java"):
-                javac(os.path.join("src", _entry.name))
-
-        os.chdir("..")
-
-    msg.info("Compiling done")
-    input()
+    msg.press_continue()
 
 
-def run(classname, grep="", grep_option=""):
-    """ Run a compiled Java program. If not specified, the Java file in
-    current directory will be executed by default.
+def javac(file, lib='.:../../../../../lib/*'):
+    """ Compile a Java file to /bin. """
 
-    """
+    msg.info(f'Compiling {msg.underline(file)}...', '')
+    # src
+    cmd = f'javac {file}'
+    # test
+    if file.startswith('TS_') or file.endswith('Test.java'):
+        if args.junit or args.tstest:
+            cmd = f'javac -cp {lib} {file}'
 
-    binpath = os.path.join("bin", classname)
-    name = classname.replace(".class", "")
-    srcpath = os.path.join("src", f"{name}.java")
-
-    msg.info(f"Running {name}.java...")
-    if not os.path.exists(binpath):
-        msg.fail(f"{classname} not found")
-
-    os.system(f"open {srcpath}")
-    if os.system(f"java -cp bin \"{name}\"") == 0:
-        msg.info("Done")
-        msg.info("Running CheckStyle...")
-        err = checkstyle(srcpath, grep, grep_option)
-        if err == 0:
-            msg.info("No CheckStyle error found")
-        else:
-            msg.warn(f"{msg.bold(err)} checkstyle errors")
-    else:
-        msg.fail("Run failed")
-
-    input()
-
-
-def run_all():
-    """ Run all Java classes in /bin. """
-
-    msg.info("Running...")
-
-    for entry in os.scandir("."):
-        if not entry.is_dir():
-            continue
-        os.chdir(entry)
-
-        msg.name(entry.name)
-        for _entry in sorted(os.scandir("bin"), key=lambda f: f.name,
-                             reverse=True):
-            _name = _entry.name
-            if _entry.is_file() and not _name.startswith(
-                    "DrawingPanel") and not _name.startswith(
-                    "TS_") and _name.endswith(".class"):
-                run(_name)
-        os.chdir("..")
-
-    msg.info("Running done")
-    input()
-
-
-def checkstyle(file, grep="", grep_option=""):
-    cmd = f"var=$({cs_path} {file} | grep {grep_option} '{grep}' -c) ; ((" \
-          f"var-=4)) ; echo \"$var\""
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    proc = sp.Popen(cmd, shell=True,
+                    stdout=sp.PIPE, stderr=sp.PIPE)
     out, err = proc.communicate()
-    return out.decode("ascii").strip()
+    rc = proc.wait()
+    out = out.decode(encoding='utf-8')
+    err = err.decode(encoding='utf-8')
+    if not args.nostacktrace:
+        if len(out) > 0:
+            print()
+            msg.info(f'Output:\n{out}')
+        if len(err) > 0:
+            print()
+            msg.fail(f'Error:\n{err}')
+
+    if rc != 0:
+        print()
+        msg.fail(f'Failed to compile {msg.underline(file)} by using:')
+        print(f'       {cmd}')
+        sp.Popen([default_open, file])
+        if msg.ask_retry():
+            javac(file)
+    else:
+        print('done')
+    return rc
 
 
-def ts_bbt(java, *files):
-    java = java.replace(".class", "")
-    for ts in files:
-        msg.info(f"Running {java} with {msg.underline(ts)}...")
-        path = os.path.join(ts_path, ts)
-        os.system(f"java -cp bin {java} < \"{path}\"")
-        # input()
+def java(file, arg=''):
+    """ Run a compiled Java program. """
+    # TODO: Refactor
+
+    msg.info(f'Running {file}...')
+    cmd = f'java -cp ".:*" {arg} {file.replace(".java", "")}'
+    if os.system(cmd) != 0:
+        msg.fail(f'Failed to run {file} by using:')
+        print(f'       {" ".join(cmd.split())}')
+        if msg.ask_retry():
+            java(file)
 
 
-def ts_wbt(*files):
-    for ts in files:
-        msg.info(f"Compiling {msg.underline(ts)}...")
-        path = os.path.join(ts_path, ts)
-        if os.system(f"javac -d bin -cp bin \"{path}\"") != 0:
-            msg.fail(f"Compiling failed")
-        msg.info(f"Running {msg.underline(ts)}...")
-        os.system(f"java -cp bin \"{ts.replace('.java', '')}\"")
-        # input()
+def java_all():
+    """ Run all Java classes. """
+
+    msg.info('Running...')
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
+        if not student.is_dir():
+            continue
+
+        msg.name(student.name)
+        os.chdir(student.name)
+
+        conf = util.get_conf_asmt('order')
+        if conf:
+            for item in conf:
+                if type(item) is dict:
+                    _item = next(iter(item))
+                    msg.info(f'Current grading: {msg.underline(_item)}')
+                    cmds = item.get(_item)
+                    run_custom(cmds)
+                    continue
+
+        os.chdir('..')
+
+
+def ts_test():
+    """ Run all teaching staff tests. """
+
+    msg.info('Running teaching staff tests...')
+    g = glob.glob('../files*')
+    if '../files' not in g:
+        with zipfile.ZipFile('../files.zip') as zf:
+            msg.info('Extracting files.zip...')
+            zf.extractall('../files')
+
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
+        if not student.is_dir():
+            continue
+        os.chdir(student.name)
+        msg.name(student.name)
+
+        msg.info('Copying TS files...')
+        distutils.dir_util.copy_tree('../../files', '.')
+
+        src = util.get_conf_asmt('src')
+        for f in src:
+            msg.info(f'Opening {msg.underline(f)}...')
+            sp.Popen([default_open, f])
+
+        test = util.get_conf_asmt('test')
+        for f in test:
+            msg.info(f'Opening {msg.underline(f)}...')
+            sp.Popen([default_open, f])
+
+        total = util.get_conf_asmt('src') + util.get_conf_asmt('test')
+
+        for item in util.get_conf_asmt('order'):
+            # Custom run is a dict: {'custom run' : [..., ...]}
+            if type(item) is dict:
+                _item = next(iter(item))
+                msg.info(f'Current grading: {msg.underline(_item)}')
+                cmds = item.get(_item)
+                run_custom(cmds)
+                continue
+
+            _item = item.lower()
+            msg.info(f'Current grading: {msg.underline(item)}')
+            if _item == 'wce':
+                ts_wce()
+            elif _item == 'tsbbt':
+                ts_tsbbt()
+            elif _item == 'tswbt':
+                ts_tswbt()
+            elif _item == 'bbt':
+                ts_bbt()
+            elif _item == 'wbt':
+                ts_wbt(test)
+            elif _item == 'style' or _item == 'checkstyle':
+                cs = checkstyle(total)
+                if cs == 0:
+                    msg.info('No checkstyle error found')
+                else:
+                    msg.warn(f'{cs} checkstyle errors found')
+
+        msg.info('Finish TS testing for current student')
+        msg.press_continue()
+        os.chdir('..')
+
+
+def ts_wce():
+    msg.info('Compiling files...')
+    msg.info(f'Current grading: {msg.underline("src")}')
+    for f in util.get_conf_asmt('src'):
+        javac(f, '.:*')
+        java(f)
+    msg.press_continue()
+    msg.info(f'Current grading: {msg.underline("test")}')
+    for f in util.get_conf_asmt('test'):
+        javac(f, '.:*')
+        java(f, 'org.junit.runner.JUnitCore')
+    msg.press_continue()
+
+
+def ts_tsbbt():
+    msg.info('Compiling TS_BBT...')
+    for f in sorted(glob.glob('TS*BB*.java')):
+        javac(f, '.:*')
+        java(f, 'org.junit.runner.JUnitCore')
+    msg.press_continue()
+
+
+def ts_tswbt():
+    msg.info('Compiling TS_WBT...')
+    ts = glob.glob('TS_*_WB_Runner.java')
+    javac(ts[0], '.:*')
+    java(ts[0])
+    msg.press_continue()
+
+
+def ts_bbt():
+    pdf = glob.glob('*.pdf')
+    if len(pdf) != 1:
+        msg.fail('BBTP pdf file not found')
+        input()
+        return
+
+    msg.info(f'Opening {pdf[0]}...')
+    sp.Popen([util.get_conf_glob('open'), pdf[0]])
+
+    cmd = None
+    while msg.ask_yn('Continue running?'):
+        msg.info(f'Current command: {msg.underline(cmd)}')
+        if cmd is None:
+            msg.info('Enter a command to execute: ')
+            cmd = input()
+        else:
+            if msg.ask_yn('Change the current command?'):
+                cmd = input()
+            else:
+                msg.info('No change')
+        msg.info(f'Running {cmd}...')
+        os.system(cmd)
+
+
+def ts_wbt(test):
+    for f in test:
+        javac(f)
+        java(f, 'org.junit.runner.JUnitCore')
+
+
+def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
+    sum = 0
+    for f in files:
+        cmd = f'{cs} {f} | grep -c ""'
+        proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+        out, err = proc.communicate()
+        out = out.decode('utf-8')
+        sum += int(out)
+    return sum
 
 
 def hw(num):
-    msg.info("Checking homework...")
-    for root, dirs, files in os.walk("."):
+    # TODO: Refactor
+    msg.info('Checking homework...')
+    for root, dirs, files in os.walk('.'):
         for student in sorted(dirs):
             os.chdir(student)
-            msg.info("Opening...")
+            msg.info('Opening...')
 
-            if os.system(f"open Homework{num}.pdf &> /dev/null") != 0:
-                msg.fail(f"Homework{num}.pdf not found.")
-                msg.info("Possible submission file:")
-                for root1, dirs1, files1 in os.walk("."):
+            if os.system(f'open Homework{num}.pdf &> /dev/null') != 0:
+                msg.fail(f'Homework{num}.pdf not found.')
+                msg.info('Possible submission file:')
+                for root1, dirs1, files1 in os.walk('.'):
                     for i, f in enumerate(files1):
                         msg.warn_index(i + 1, f)
                     skip_index = len(files1) + 1
-                    msg.warn_index(skip_index, "Skip")
-                    msg.info("Select a file to open: ", "")
-                    item = msg.prompt_index(1, skip_index)
+                    msg.warn_index(skip_index, 'Skip')
+                    msg.info('Select a file to open: ', '')
+                    item = msg.ask_index(1, skip_index)
                     if item == skip_index:
-                        msg.warn("Skipped", "")
+                        msg.warn('Skipped', '')
                         break
                     while os.system(
-                            f"open \"{files1[item - 1]}\" &> /dev/null") != 0:
+                            f'open \'{files1[item - 1]}\' &> /dev/null') != 0:
                         msg.fail(
-                                f"No application can"
-                                f" open {msg.underline(files1[item - 1])}")
+                            f'No application can'
+                            f' open {msg.underline(files1[item - 1])}')
                         for i, f in enumerate(files1):
                             msg.warn_index(i + 1, f)
-                        msg.warn_index(skip_index, "Skip")
-                        msg.info("Select a file to open: ", "")
-                        item = msg.prompt_index(1, skip_index)
+                        msg.warn_index(skip_index, 'Skip')
+                        msg.info('Select a file to open: ', '')
+                        item = msg.ask_index(1, skip_index)
                         if item == skip_index:
-                            msg.warn("Skipped", "")
+                            msg.warn('Skipped', '')
                             break
-                    msg.info("Opening")
-            else:
-                msg.info("Done")
-            os.chdir("..")
+                    msg.info('Opening')
+            os.chdir('..')
             input()
 
 
-if __name__ == "__main__":
+def run_custom(cmds):
+    for c in cmds:
+        msg.info(f'Running {msg.underline(c)}')
+        while sp.call(c, shell=True) != 0:
+            msg.fail(f'Failed to run {msg.underline(c)}')
+            if not msg.ask_retry():
+                print()
+                break
+        # msg.press_continue()
+
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-            description="The automatic grading script for CSC 116. "
-                        "GitHub Repository: https://github.com/apo5698/AGS")
-    parser.add_argument("-e", "--exercise", help="grading an exercise")
-    parser.add_argument("-p", "--project", help="grading a project")
-    parser.add_argument("-hw", "--homework", help="grading a homework")
-    parser.add_argument("-v", "--version", help="display the current version",
+        description='The automatic grading script for CSC 116. '
+        'GitHub Repository: '
+        'https://github.com/apo5698/ags-cli')
+    parser.add_argument('-e', '--exercise', help='grade an exercise')
+    parser.add_argument('-p', '--project', help='grade a project')
+    parser.add_argument('-hw', '--homework', help='grade a homework')
+
+    parser.add_argument('-i', '--init',
+                        nargs='?',
+                        const=' ',
+                        help='initialize system')
+    parser.add_argument('-r', '--reset',
+                        help='reset current assignment',
                         action='store_true')
+    parser.add_argument('-v', '--version',
+                        help='display the current version',
+                        action='store_true')
+    parser.add_argument('-j', '--junit',
+                        help='compile tests with junit',
+                        action='store_true')
+    parser.add_argument('-ts', '--tstest',
+                        help='teaching staff tests provided',
+                        action='store_true')
+    parser.add_argument('-nc', '--nocompile',
+                        help='do not compile',
+                        action='store_true')
+    parser.add_argument('-nr', '--norun',
+                        help='do not run',
+                        action='store_true')
+    parser.add_argument('-ns', '--nostacktrace',
+                        help='do not print stacktrace',
+                        action='store_true')
+
     args = parser.parse_args()
 
-    asgmt_path = "."
-
-    # 0 is exercise, 1 is project, 2 is homework
-    asgmt_type = ASGMT_EX
-    asgmt_num = 0
-
     if args.version:
-        print(open("./VERSION").read())
+        print(open('./VERSION').read())
         exit(0)
 
+    msg.info('Starting service...')
+    if args.init:
+        force = True if args.init == 'f' else False
+        util.init(force)
+        exit()
+
+    asmt_name, asmt_cat = '', ''
+    asmt_num = 0
     if args.exercise:
-        asgmt_path = os.path.join("exercises", f"day{args.exercise.zfill(2)}")
-        asgmt_num = int(args.exercise.zfill(2))
+        asmt_cat = 'exercises'
+        asmt_name = 'day'
+        asmt_num = args.exercise.zfill(2)
     elif args.project:
-        asgmt_path = os.path.join("projects", f"p{args.project}")
-        asgmt_type += 1
-        asgmt_num = int(args.project)
+        asmt_cat = 'projects'
+        asmt_name = 'p'
+        asmt_num = args.project
     elif args.homework:
-        asgmt_path = os.path.join("homework", f"hw{args.homework}")
-        asgmt_type += 2
-        asgmt_num = int(args.homework)
+        asmt_cat = 'homework'
+        asmt_name = 'hw'
+        args.num = args.homework
     else:
-        msg.fatal("Missing arguments. Use -h or --help for usage.")
+        msg.fatal('Invalid arguments. Use -h or --help for usage.')
+    asmt_disp_name = f'{asmt_cat.capitalize()[:-1]} {asmt_num}'
 
-    msg.info("Starting service...")
+    # Path and config
+    path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
+    path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
+    util.read_config_glob()
+    util.read_config_asmt(path_asmt_conf)
+    path_cs = util.get_conf_glob('checkstyle')
+    path_lib = util.get_conf_glob('lib')
+    default_open = util.get_conf_glob('open')
 
-    # Paths
-    root_path = os.getcwd()
-    cs_path = util.get_setting("checkstyle")
-    lib_path = os.path.join(root_path, util.get_setting('lib'))
-
-    os.chdir(asgmt_path)
-    abs_asgmt_path = os.path.abspath(os.getcwd())
-    ts_path = os.path.join(abs_asgmt_path, util.get_setting("ts_test_path"))
-
-    precheck()
-    rename()
-    if asgmt_type == ASGMT_HW:
+    os.chdir(path_asmt)
+    if precheck() != 0:
+        msg.fatal('/submission or zip file not found')
+    if rename() != 0:
+        msg.warn('Already renamed. If not, remove /submission and run again')
+        msg.info('Press <return> to continue')
+        input()
+    if args.homework:
         hw(args.homework)
+    if args.tstest:
+        ts_test()
     else:
-        javac_all()
-        run_all()
+        if not args.nocompile:
+            javac_all()
+        if not args.norun:
+            java_all()

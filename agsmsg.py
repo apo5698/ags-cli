@@ -1,40 +1,39 @@
-class Color:
-    # Font style
-    BOLD = 1
-    ITALIC = 2
-    UNDERLINE = 4
-    STRIKETHROUGH = 9
+class style:
+    class color():
+        black = 90
+        red = 91
+        green = 92
+        yellow = 93
+        blue = 94
+        purple = 95
+        cyan = 96
+        white = 97
 
-    # Colors
-    BLACK = 90
-    RED = 91
-    GREEN = 92
-    YELLOW = 93
-    BLUE = 94
-    PURPLE = 95
-    CYAN = 96
-    WHITE = 97
-
+    class font():
+        bold = 1
+        italic = 2
+        underline = 4
+        strike = 9
 
     @staticmethod
-    def colorize(color, msg):
-        """ Return msg with specified color. 
-        Must use pre-defined color/format constants. 
+    def stylize(color, msg):
+        """ Return msg with specified color.
+        Must use pre-defined color/format constants.
         """
 
-        return f"\33[{color}m{msg}\33[0m"
+        return f'\33[{color}m{msg}\33[0m'
 
 
-def info(msg, ending="\n"):
+def info(msg, end='\n', color=style.color.green):
     """ Print "[INFO] message" (Green). """
 
-    print(f"{Color.colorize(Color.GREEN, f'[INFO] ')}{msg}", end=ending)
+    print(f'{style.stylize(color, f"[INFO]")} {msg}', end=end, flush=True)
 
 
-def fail(msg, ending="\n"):
+def fail(msg, end='\n', color=style.color.red):
     """ Print "[FAIL] message" (Red). """
 
-    print(f"{Color.colorize(Color.RED, f'[FAIL] ')}{msg}", end=ending)
+    print(f'{style.stylize(color, f"[FAIL]")} {msg}', end=end, flush=True)
 
 
 def fatal(msg):
@@ -44,52 +43,68 @@ def fatal(msg):
     exit(1)
 
 
-def warn(msg, ending="\n"):
+def warn(msg, end='\n', color=style.color.yellow):
     """ Print "[WARN] message" (Yellow). """
 
-    print(f"{Color.colorize(Color.YELLOW, f'[WARN] ')}{msg}", end=ending)
+    print(f'{style.stylize(color, f"[WARN]")} {msg}', end=end, flush=True)
 
 
-def name(msg):
+def name(msg, color=style.color.purple):
     """ Print "[NAME] message" (Purple). """
 
-    print(f"{Color.colorize(Color.PURPLE, f'[NAME] ')}{msg}")
+    print(f'{style.stylize(color, f"[NAME]")} {msg}', flush=True)
 
 
-def warn_index(index, msg):
+def press_continue(button='return'):
+    info(f'Press <{button}> to continue')
+    input()
+
+
+def warn_index(index, msg, color=style.color.yellow):
     """ Print "[`index`] message" (Yellow). """
 
-    print(Color.colorize(Color.YELLOW, f"[{index}] {msg}"))
+    print(style.stylize(color, f'[{index}] {msg}'), flush=True)
 
 
-### Methods below only return processed string ###
+# Methods below only return string #
 
 def bold(msg):
     """ Return the bold message. """
 
-    return Color.colorize(Color.BOLD, msg)
+    return style.stylize(style.BOLD, msg)
 
 
 def underline(msg):
     """ Return the message with underline. """
 
-    return Color.colorize(Color.UNDERLINE, msg)
+    return style.stylize(style.font.underline, msg)
 
 
-def prompt_yn(msg):
+def ask_yn(msg, msgtype='info'):
     """ Prompts the user for yes (Y/y) or no (N/n).
     Returns `True` if entering yes, `False` otherwise.
     """
 
-    info(f"{msg} [Y/n]: ", "")
+    text = f'{msg} [Y/n]: '
+    if msgtype == 'info':
+        info(text, '')
+    elif msgtype == 'warn':
+        warn(text, '')
+    elif msgtype == 'fail':
+        fail(text, '')
+
     option = input().lower()
-    while option != "y" and option != "n":
-        fail(f"Invalid option: {option}. Please try again: ", "")
+    while option != 'y' and option != 'n':
+        fail(f'Invalid option: {option}. Please try again: ', '')
         option = input().lower()
-    return True if option == "y" else False
+    return True if option == 'y' else False
 
 
-def prompt_index(start, end):
+def ask_retry():
+    return ask_yn('Retry?')
+
+
+def ask_index(start, end):
     """ Prompts the user for numbers. 
     Returns it if is a valid input, `None` otherwise.
     """
@@ -99,9 +114,9 @@ def prompt_index(start, end):
         try:
             option = int(input())
         except ValueError:
-            fail(f"Invalid option (input must be an integer): {option}")
+            fail(f'Invalid option (input must be an integer): {option}')
             continue
         if start <= option <= end:
             break
-        fail(f"Invalid option (index out of range): {option}")
+        fail(f'Invalid option (index out of range): {option}')
     return option

@@ -391,16 +391,18 @@ if __name__ == '__main__':
     elif args.homework:
         asmt_cat = 'homework'
         asmt_name = 'hw'
-        args.num = args.homework
+        asmt_num = args.homework
     else:
         msg.fatal('Invalid arguments. Use -h or --help for usage.')
-    asmt_disp_name = f'{asmt_cat.capitalize()[:-1]} {asmt_num}'
+    asmt_disp_name = f'{asmt_cat.capitalize()} {asmt_num}'
 
     # Path and config
     path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
-    path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
+    if not args.homework:
+        path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
+        util.read_config_asmt(path_asmt_conf)
+
     util.read_config_glob()
-    util.read_config_asmt(path_asmt_conf)
     path_cs = util.get_conf_glob('checkstyle')
     path_lib = util.get_conf_glob('lib')
     default_open = util.get_conf_glob('open')

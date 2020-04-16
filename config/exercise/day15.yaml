@@ -1,0 +1,11 @@
+files:
+  - Message.java
+  - DoubleSpace.java
+  - CollapseSpaces.java
+custom run:
+  - java Message
+  - diff message.txt ../../message_exp.txt
+  - java DoubleSpace < ../../input_DoubleSpace.ags
+  - diff output_DoubleSpace.txt ../../output_DoubleSpace_exp.txt
+  - java CollapseSpaces < ../../input_CollapseSpaces.ags
+  - diff output_CollapseSpaces.txt ../../output_CollapseSpaces_exp.txt

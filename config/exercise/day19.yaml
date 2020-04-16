@@ -1,0 +1,2 @@
+custom run:
+  - java WeatherInfo RaleighWeather2010.txt | diff -B --strip-trailing-cr ../../output_exp.txt -

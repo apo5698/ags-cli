@@ -1,0 +1,2 @@
+custom run:
+  - java CarInventoryTest | diff -B --strip-trailing-cr ../../output_exp.txt -

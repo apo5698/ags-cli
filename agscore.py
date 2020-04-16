@@ -64,8 +64,14 @@ def javac_all():
         os.chdir(student)
 
         msg.name(student.name)
-        for file in glob.glob('*.java', recursive=True):
-            javac(file)
+        files = util.get_conf_asmt('files')
+        if files:
+            for file in files:
+                javac(file)
+        else:
+            for file in glob.glob('*.java', recursive=True):
+                javac(file)
+
         os.chdir('..')
 
     msg.press_continue()
@@ -75,6 +81,12 @@ def javac(file, lib='.:../../../../../lib/*'):
     """ Compile a Java file to /bin. """
 
     msg.info(f'Compiling {msg.underline(file)}...', '')
+    if not os.path.exists(file):
+        print()
+        msg.fail(f'{msg.underline(file)} does not exist', '')
+        input()
+        return -1
+
     # src
     cmd = f'javac {file}'
     # test
@@ -132,15 +144,17 @@ def java_all():
         msg.name(student.name)
         os.chdir(student.name)
 
-        conf = util.get_conf_asmt('order')
-        if conf:
-            for item in conf:
-                if type(item) is dict:
-                    _item = next(iter(item))
-                    msg.info(f'Current grading: {msg.underline(_item)}')
-                    cmds = item.get(_item)
-                    run_custom(cmds)
-                    continue
+        cmds = util.get_conf_asmt('custom run')
+        files = util.get_conf_asmt('files')
+
+        if cmds:
+            run_custom(cmds)
+        elif files:
+            for f in files:
+                java(f)
+        else:
+            for f in glob.glob('*.java'):
+                java(f)
 
         os.chdir('..')
 
@@ -324,6 +338,7 @@ def run_custom(cmds):
     for c in cmds:
         msg.info(f'Running {msg.underline(c)}')
         while sp.call(c, shell=True) != 0:
+            print()
             msg.fail(f'Failed to run {msg.underline(c)}')
             if not msg.ask_retry():
                 print()
@@ -381,11 +396,11 @@ if __name__ == '__main__':
     asmt_name, asmt_cat = '', ''
     asmt_num = 0
     if args.exercise:
-        asmt_cat = 'exercises'
+        asmt_cat = 'exercise'
         asmt_name = 'day'
         asmt_num = args.exercise.zfill(2)
     elif args.project:
-        asmt_cat = 'projects'
+        asmt_cat = 'project'
         asmt_name = 'p'
         asmt_num = args.project
     elif args.homework:
@@ -398,9 +413,11 @@ if __name__ == '__main__':
 
     # Path and config
     path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
-    if not args.homework:
-        path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
-        util.read_config_asmt(path_asmt_conf)
+    if args.exercise:
+        util.read_config_asmt(f'{path_asmt.replace("content", "config")}.yaml')
+    elif args.exercise:
+        util.read_config_asmt(
+            f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml')
 
     util.read_config_glob()
     path_cs = util.get_conf_glob('checkstyle')

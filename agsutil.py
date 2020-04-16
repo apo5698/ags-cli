@@ -90,7 +90,7 @@ def init(force):
             shutil.rmtree(d, ignore_errors=True)
         os.mkdir(d)
     # Day 1 to 27
-    for i in range(1, 28):
+    for i in range(1, 26):
         d = f'content/exercise/day{str(i).zfill(2)}'
         if os.path.exists(d) and force:
             shutil.rmtree(d, ignore_errors=True)

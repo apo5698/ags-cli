@@ -298,40 +298,31 @@ def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
 def hw(num):
     # TODO: Refactor
     msg.info('Checking homework...')
-    for root, dirs, files in os.walk('.'):
-        for student in sorted(dirs):
-            os.chdir(student)
-            msg.info('Opening...')
+    folders = glob.glob('* *')
+    for f in folders:
+        msg.name(f)
+        os.chdir(f)
 
-            if os.system(f'open Homework{num}.pdf &> /dev/null') != 0:
-                msg.fail(f'Homework{num}.pdf not found.')
-                msg.info('Possible submission file:')
-                for root1, dirs1, files1 in os.walk('.'):
-                    for i, f in enumerate(files1):
-                        msg.warn_index(i + 1, f)
-                    skip_index = len(files1) + 1
-                    msg.warn_index(skip_index, 'Skip')
-                    msg.info('Select a file to open: ', '')
-                    item = msg.ask_index(1, skip_index)
-                    if item == skip_index:
-                        msg.warn('Skipped', '')
-                        break
-                    while os.system(
-                            f'open \'{files1[item - 1]}\' &> /dev/null') != 0:
-                        msg.fail(
-                            f'No application can'
-                            f' open {msg.underline(files1[item - 1])}')
-                        for i, f in enumerate(files1):
-                            msg.warn_index(i + 1, f)
-                        msg.warn_index(skip_index, 'Skip')
-                        msg.info('Select a file to open: ', '')
-                        item = msg.ask_index(1, skip_index)
-                        if item == skip_index:
-                            msg.warn('Skipped', '')
-                            break
-                    msg.info('Opening')
-            os.chdir('..')
-            input()
+        files = glob.glob('*.*')
+        num = len(files)
+        if num == 0:
+            msg.fail('No submission')
+        elif num == 1:
+            pdf = files[0]
+            msg.info(f'Opening {msg.underline(pdf)}...')
+            sp.Popen(f'{default_open} \"{pdf}\"', shell=True)
+        else:
+            msg.warn(f'Multiple files found (total {num}):')
+            msg.index_list(files)
+            print('Select a file to open: ', end='')
+            i = msg.ask_index(0, num)
+            if 0 < i < num:
+                pdf = files[i]
+                msg.info(f'Opening {msg.underline(pdf)}...')
+                sp.Popen(f'{default_open} \"{pdf}\"', shell=True)
+
+        input()
+        os.chdir('..')
 
 
 def run_custom(cmds):
@@ -433,7 +424,7 @@ if __name__ == '__main__':
         input()
     if args.homework:
         hw(args.homework)
-    if args.tstest:
+    elif args.tstest:
         ts_test()
     else:
         if not args.nocompile:

@@ -284,7 +284,7 @@ def ts_wbt(test):
         java(f, 'org.junit.runner.JUnitCore')
 
 
-def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
+def checkstyle(files, cs='~/cs-checkstyle/checkstyle'):
     sum = 0
     for f in files:
         cmd = f'{cs} {f} | grep -c ""'
@@ -406,7 +406,7 @@ if __name__ == '__main__':
     path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
     if args.exercise:
         util.read_config_asmt(f'{path_asmt.replace("content", "config")}.yaml')
-    elif args.exercise:
+    elif args.project:
         util.read_config_asmt(
             f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml')
 

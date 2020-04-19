@@ -188,8 +188,6 @@ def ts_test():
             msg.info(f'Opening {msg.underline(f)}...')
             sp.Popen([default_open, f])
 
-        total = util.get_conf_asmt('src') + util.get_conf_asmt('test')
-
         for item in util.get_conf_asmt('order'):
             # Custom run is a dict: {'custom run' : [..., ...]}
             if type(item) is dict:
@@ -212,7 +210,7 @@ def ts_test():
             elif _item == 'wbt':
                 ts_wbt(test)
             elif _item == 'style' or _item == 'checkstyle':
-                cs = checkstyle(total)
+                cs = checkstyle(src, test)
                 if cs == 0:
                     msg.info('No checkstyle error found')
                 else:
@@ -284,14 +282,20 @@ def ts_wbt(test):
         java(f, 'org.junit.runner.JUnitCore')
 
 
-def checkstyle(files, cs='~/cs-checkstyle/checkstyle'):
+def checkstyle(src, test, cs='~/cs-checkstyle/checkstyle'):
     sum = 0
-    for f in files:
+    for f in src:
         cmd = f'{cs} {f} | grep -c ""'
         proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
         out, err = proc.communicate()
         out = out.decode('utf-8')
-        sum += int(out)
+        sum += int(out) - 4
+    for f in test:
+        cmd = f'{cs} {f} | grep -v "magic number" -c'
+        proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+        out, err = proc.communicate()
+        out = out.decode('utf-8')
+        sum += int(out) - 4
     return sum
 
 

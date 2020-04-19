@@ -283,24 +283,44 @@ def ts_wbt(test):
 
 
 def checkstyle(src, test, cs='~/cs-checkstyle/checkstyle'):
-    sum = 0
+    total = 0
     for f in src:
+        msg.textbar(f, 4)
         cmd = f'{cs} {f} | grep -c ""'
-        proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-        out, err = proc.communicate()
-        out = out.decode('utf-8')
-        sum += int(out) - 4
+        proc = sp.run(cmd, capture_output=True, shell=True, text=True)
+        num = int(proc.stdout) - 4
+        total += num
+        msg.align_right(num, 4)
+    # Ignore magic numbers for test files
     for f in test:
+        msg.textbar(f, 4)
         cmd = f'{cs} {f} | grep -v "magic number" -c'
-        proc = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-        out, err = proc.communicate()
-        out = out.decode('utf-8')
-        sum += int(out) - 4
-    return sum
+        proc = sp.run(cmd, capture_output=True, shell=True, text=True)
+        num = int(proc.stdout) - 4
+        total += num
+        msg.align_right(num, 4)
+    return total
+
+
+def checkstyle_all():
+    for student in sorted(os.scandir('.'), key=lambda s: s.name):
+        if not student.is_dir():
+            continue
+        os.chdir(student.name)
+        msg.name(student.name, swap=True)
+
+        src = util.get_conf_asmt('src')
+        test = util.get_conf_asmt('test')
+        total = checkstyle(src, test)
+        print('-' * 30)
+        msg.textbar('Total', 4)
+        msg.align_right(total, 4)
+
+        print()
+        os.chdir('..')
 
 
 def hw(num):
-    # TODO: Refactor
     msg.info('Checking homework...')
     folders = glob.glob('* *')
     for f in folders:
@@ -360,10 +380,13 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--version',
                         help='display the current version',
                         action='store_true')
+    parser.add_argument('-c', '--checkstyle',
+                        help='run checkstyle',
+                        action='store_true')
     parser.add_argument('-j', '--junit',
                         help='compile tests with junit',
                         action='store_true')
-    parser.add_argument('-ts', '--tstest',
+    parser.add_argument('-t', '--tstest',
                         help='teaching staff tests provided',
                         action='store_true')
     parser.add_argument('-nc', '--nocompile',
@@ -431,6 +454,8 @@ if __name__ == '__main__':
     elif args.tstest:
         ts_test()
     else:
+        if args.checkstyle:
+            checkstyle_all()
         if not args.nocompile:
             javac_all()
         if not args.norun:

@@ -128,3 +128,28 @@ def index_list(list):
         s += 1
         print(f'   [{i}] {underline(l)}')
     print(f'   [{s}] Skip')
+
+
+def textbar(msg, length=4):
+    """ Print a message with spaces and vertical bar before it. For example:\n
+    ```text
+      5 | This is a message
+    123 | This is another message
+    ```
+    """
+    print(f'{" " * length} | {msg}', end='\r')
+
+
+def align_left(msg, length):
+    """ Align the message to left. """
+    print(f'{msg:<{length}}')
+
+
+def align_center(msg, length):
+    """ Align the message to center. """
+    print(f'{msg:^{length}}')
+
+
+def align_right(msg, length):
+    """ Align the message to right. """
+    print(f'{msg:>{length}}')

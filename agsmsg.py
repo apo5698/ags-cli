@@ -49,10 +49,10 @@ def warn(msg, end='\n', color=style.color.yellow):
     print(f'{style.stylize(color, f"[WARN]")} {msg}', end=end, flush=True)
 
 
-def name(msg, color=style.color.purple):
+def name(name):
     """ Print "[NAME] message" (Purple). """
 
-    print(f'{style.stylize(color, f"[NAME]")} {msg}', flush=True)
+    print(f'[{name}]')
 
 
 def press_continue(button='return'):

@@ -1,13 +1,16 @@
 class style:
+    """
+    All styles are in ANSI escape code.
+    """
     class color():
-        black = 90
-        red = 91
-        green = 92
-        yellow = 93
-        blue = 94
-        purple = 95
-        cyan = 96
-        white = 97
+        black = 30
+        red = 31
+        green = 32
+        yellow = 33
+        blue = 34
+        purple = 35
+        cyan = 36
+        white = 37
 
     class font():
         bold = 1
@@ -20,49 +23,48 @@ class style:
         """ Return msg with specified color.
         Must use pre-defined color/format constants.
         """
-
-        return f'\33[{color}m{msg}\33[0m'
+        return f'\x1b[{color}m{msg}\x1b[0m'
 
 
 def info(msg, end='\n', color=style.color.green):
-    """ Print "[INFO] message" (Green). """
-
-    print(f'{style.stylize(color, f"[INFO]")} {msg}', end=end, flush=True)
+    """ Print a information message (Default color green). """
+    print(f'{style.stylize(color, f"INFO")}  {msg}', end=end, flush=True)
 
 
 def fail(msg, end='\n', color=style.color.red):
-    """ Print "[FAIL] message" (Red). """
-
-    print(f'{style.stylize(color, f"[FAIL]")} {msg}', end=end, flush=True)
+    """ Print a failing message (Default color red). """
+    print(f'{style.stylize(color, f"FAIL")}  {msg}', end=end, flush=True)
 
 
 def fatal(msg):
-    """ Print "[FAIL] message" (Red) and exits with code 1. """
-
+    """ Print a failing message (Default color red) then exit with code 1. """
     fail(msg)
     exit(1)
 
 
 def warn(msg, end='\n', color=style.color.yellow):
-    """ Print "[WARN] message" (Yellow). """
+    """ Print a warning message (Default color yellow). """
+    print(f'{style.stylize(color, f"WARN")}  {msg}', end=end, flush=True)
 
-    print(f'{style.stylize(color, f"[WARN]")} {msg}', end=end, flush=True)
 
-
-def name(name):
-    """ Print "[NAME] message" (Purple). """
-
-    print(f'[{name}]')
+def name(namestr, swap=False, end='\n'):
+    """ Return the name in brackets. For example:\n
+    ```text
+    [abc def]
+    [abc-def ghi]
+    ```
+    """
+    return ' '.join(reversed(namestr.split(' '))) if swap else f'[{namestr}]'
 
 
 def press_continue(button='return'):
+    """ Press a button to continue. """
     info(f'Press <{button}> to continue')
     input()
 
 
 def warn_index(index, msg, color=style.color.yellow):
     """ Print "[`index`] message" (Yellow). """
-
     print(style.stylize(color, f'[{index}] {msg}'), flush=True)
 
 
@@ -70,21 +72,18 @@ def warn_index(index, msg, color=style.color.yellow):
 
 def bold(msg):
     """ Return the bold message. """
-
     return style.stylize(style.BOLD, msg)
 
 
 def underline(msg):
     """ Return the message with underline. """
-
     return style.stylize(style.font.underline, msg)
 
 
 def ask_yn(msg, msgtype='info'):
     """ Prompts the user for yes (Y/y) or no (N/n).
-    Returns `True` if entering yes, `False` otherwise.
+    Returns `True` if entering Y or y, `False` otherwise.
     """
-
     text = f'{msg} [Y/n]: '
     if msgtype == 'info':
         info(text, '')
@@ -97,18 +96,18 @@ def ask_yn(msg, msgtype='info'):
     while option != 'y' and option != 'n':
         fail(f'Invalid option: {option}. Please try again: ', '')
         option = input().lower()
-    return True if option == 'y' else False
+    return option == 'y'
 
 
 def ask_retry():
+    """ Ask for retry. """
     return ask_yn('Retry?')
 
 
 def ask_index(start, end):
-    """ Prompts the user for numbers. 
-    Returns it if is a valid input, `None` otherwise.
+    """ Prompt the user for numbers. 
+    Return it if is a valid index, `None` otherwise.
     """
-
     option = None
     while True:
         try:
@@ -122,15 +121,23 @@ def ask_index(start, end):
     return option
 
 
-def index_list(list):
-    s = 0
+def index_list(list, skip=True):
+    """ Print an indexed list. For example:\n
+    ```text
+    [0] abc
+    [1] def
+    [2] ghi
+    [3] Skip
+    ```
+    If `skip` set to `False`, `[x] Skip` option will not be displayed.
+    """
     for i, l in enumerate(list):
-        s += 1
-        print(f'   [{i}] {underline(l)}')
-    print(f'   [{s}] Skip')
+        print(f'[{i}] {underline(l)}')
+    if skip:
+        print(f'[{i + 1}] Skip')
 
 
-def textbar(msg, length=4):
+def textbar(msg, length=3):
     """ Print a message with spaces and vertical bar before it. For example:\n
     ```text
       5 | This is a message
@@ -142,14 +149,14 @@ def textbar(msg, length=4):
 
 def align_left(msg, length):
     """ Align the message to left. """
-    print(f'{msg:<{length}}')
+    return f'{msg:<{length}}'
 
 
 def align_center(msg, length):
     """ Align the message to center. """
-    print(f'{msg:^{length}}')
+    return f'{msg:^{length}}'
 
 
 def align_right(msg, length):
     """ Align the message to right. """
-    print(f'{msg:>{length}}')
+    return f'{msg:>{length}}'

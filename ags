@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! python3 --version; then
+    echo "ver. >= python3.6 required"
+    exit 1
+fi
+
+python3 agscore.py $@

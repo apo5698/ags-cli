@@ -38,18 +38,20 @@ def precheck():
 def rename():
     """ Rename all directories to [firstname lastname]. """
 
-    msg.info('Renaming...')
-    for entry in os.scandir('.'):
-        if '_assignsubmission_file_' not in entry.name:
-            return 1
+    moodle_sub_specifier = '_assignsubmission_file_'
 
-        n = re.split('__', entry.name)[0].split(' ')
-        # if not args.project:
-        #     n[0], n[1] = n[1], n[0]
-        os.rename(entry.name, ' '.join(n))
+    msg.info('Renaming...')
+    g = glob.glob(f'*{moodle_sub_specifier}')
+    if len(g) == 0:
+        return -1
+
+    for entry in g:
+        print(msg.align_left(msg.name(entry), 80), end='')
+        entry_new = ' '.join(re.split('__', entry)[0].split(' '))
+        os.rename(entry, entry_new)
+        print(f'-> {msg.name(entry_new)}')
 
     msg.info(f'Renamed to [lastname firstname]')
-
     return 0
 
 
@@ -58,12 +60,12 @@ def javac_all():
 
     msg.info('Compiling...')
 
-    for student in sorted(os.scandir('.'), key=lambda s: s.name):
+    for student in glob.glob('* *'):
         if not student.is_dir():
             continue
         os.chdir(student)
 
-        msg.name(student.name)
+        print(msg.name(student.name))
         files = util.get_conf_asmt('files')
         if files:
             for file in files:
@@ -141,7 +143,7 @@ def java_all():
         if not student.is_dir():
             continue
 
-        msg.name(student.name)
+        print(msg.name(student.name))
         os.chdir(student.name)
 
         cmds = util.get_conf_asmt('custom run')
@@ -163,17 +165,17 @@ def ts_test():
     """ Run all teaching staff tests. """
 
     msg.info('Running teaching staff tests...')
-    g = glob.glob('../files*')
-    if '../files' not in g:
-        with zipfile.ZipFile('../files.zip') as zf:
-            msg.info('Extracting files.zip...')
-            zf.extractall('../files')
+    g = glob.glob(args.tstest)
+    if args.tstest not in g:
+        with zipfile.ZipFile(args.tstest) as zf:
+            msg.info(f'Extracting {args.tstest}...')
+            zf.extractall('ts')
 
     for student in sorted(os.scandir('.'), key=lambda s: s.name):
         if not student.is_dir():
             continue
         os.chdir(student.name)
-        msg.name(student.name)
+        print(msg.name(student.name))
 
         msg.info('Copying TS files...')
         distutils.dir_util.copy_tree('../../files', '.')
@@ -285,20 +287,20 @@ def ts_wbt(test):
 def checkstyle(src, test, cs='~/cs-checkstyle/checkstyle'):
     total = 0
     for f in src:
-        msg.textbar(f, 4)
+        msg.textbar(f)
         cmd = f'{cs} {f} | grep -c ""'
         proc = sp.run(cmd, capture_output=True, shell=True, text=True)
         num = int(proc.stdout) - 4
         total += num
-        msg.align_right(num, 4)
+        print(msg.align_right(num, 3))
     # Ignore magic numbers for test files
     for f in test:
-        msg.textbar(f, 4)
+        msg.textbar(f)
         cmd = f'{cs} {f} | grep -v "magic number" -c'
         proc = sp.run(cmd, capture_output=True, shell=True, text=True)
         num = int(proc.stdout) - 4
         total += num
-        msg.align_right(num, 4)
+        print(msg.align_right(num, 3))
     return total
 
 
@@ -307,24 +309,24 @@ def checkstyle_all():
         if not student.is_dir():
             continue
         os.chdir(student.name)
-        msg.name(student.name, swap=True)
+        print(msg.name(student.name, swap=True))
 
         src = util.get_conf_asmt('src')
         test = util.get_conf_asmt('test')
         total = checkstyle(src, test)
         print('-' * 30)
-        msg.textbar('Total', 4)
-        msg.align_right(total, 4)
+        msg.textbar('Total')
+        print(msg.align_right(total, 3))
 
         print()
         os.chdir('..')
 
 
-def hw(num):
+def hw():
     msg.info('Checking homework...')
     folders = glob.glob('* *')
     for f in folders:
-        msg.name(f)
+        print(msg.name(f))
         os.chdir(f)
 
         files = glob.glob('*.*')
@@ -363,9 +365,9 @@ def run_custom(cmds):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='The automatic grading script for CSC 116. '
-        'GitHub Repository: '
-        'https://github.com/apo5698/ags-cli')
+            description='The automatic grading script for CSC 116. '
+                        'GitHub Repository: '
+                        'https://github.com/apo5698/ags-cli')
     parser.add_argument('-e', '--exercise', help='grade an exercise')
     parser.add_argument('-p', '--project', help='grade a project')
     parser.add_argument('-hw', '--homework', help='grade a homework')
@@ -387,8 +389,7 @@ if __name__ == '__main__':
                         help='compile tests with junit',
                         action='store_true')
     parser.add_argument('-t', '--tstest',
-                        help='teaching staff tests provided',
-                        action='store_true')
+                        help='teaching staff tests provided')
     parser.add_argument('-nc', '--nocompile',
                         help='do not compile',
                         action='store_true')
@@ -411,8 +412,7 @@ if __name__ == '__main__':
         util.init(force)
         exit()
 
-    asmt_name, asmt_cat = '', ''
-    asmt_num = 0
+    asmt_name, asmt_cat, asmt_num = None, None, None
     if args.exercise:
         asmt_cat = 'exercise'
         asmt_name = 'day'
@@ -435,7 +435,8 @@ if __name__ == '__main__':
         util.read_config_asmt(f'{path_asmt.replace("content", "config")}.yaml')
     elif args.project:
         util.read_config_asmt(
-            f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml')
+                f'{path_asmt.replace("content", "config")}_'
+                f'{util.current_semester()}.yaml')
 
     util.read_config_glob()
     path_cs = util.get_conf_glob('checkstyle')
@@ -444,13 +445,12 @@ if __name__ == '__main__':
 
     os.chdir(path_asmt)
     if precheck() != 0:
-        msg.fatal('/submission or zip file not found')
+        msg.fatal('zip file or /submission not found')
     if rename() != 0:
         msg.warn('Already renamed. If not, remove /submission and run again')
-        msg.info('Press <return> to continue')
-        input()
+        msg.press_continue()
     if args.homework:
-        hw(args.homework)
+        hw()
     elif args.tstest:
         ts_test()
     else:

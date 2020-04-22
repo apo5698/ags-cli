@@ -2,7 +2,7 @@ import argparse
 import distutils.dir_util
 import glob
 import os
-import re
+import shutil
 import subprocess as sp
 import webbrowser
 import zipfile
@@ -29,30 +29,42 @@ def precheck():
         msg.info('Extracting...')
         g = glob.glob('CSC 116*.zip')
         if len(g) == 1:
-            with zipfile.ZipFile(g[0]) as file:
-                file.extractall('submission')
+            unzip(g[0])
 
     return 0
+
+
+def unzip(file):
+    with zipfile.ZipFile(file) as f:
+        f.extractall('submission')
 
 
 def rename():
     """ Rename all directories to [firstname lastname]. """
 
-    moodle_sub_specifier = '_assignsubmission_file_'
-
     msg.info('Renaming...')
+
+    moodle_sub_specifier = '_assignsubmission_file_'
     g = glob.glob(f'submission/*{moodle_sub_specifier}')
-    if len(g) == 0:
-        return -1
+
+    while len(g) == 0:
+        if msg.ask_yn('Directory names do not match, remove /submission and retry?',
+                      msgtype='warn'):
+            shutil.rmtree('submission')
+            msg.info('Extracting...')
+            z = glob.glob('CSC 116*.zip')
+            if len(z) == 1:
+                unzip(z[0])
+            g = glob.glob(f'submission/*{moodle_sub_specifier}')
 
     for entry in g:
-        print(msg.align_left(msg.name(entry), 80), end='')
-        entry_new = ' '.join(re.split('__', entry)[0].split(' '))
-        os.rename(entry, entry_new)
-        print(f'-> {msg.name(entry_new)}')
+        print(msg.align_left(msg.name(entry.split('/')[1]), 80))
+        entry_new = entry.split('__')[0]
+        shutil.move(entry, entry_new)
+        print(f'\t-> {msg.name(entry_new.split("/")[1])}')
 
     msg.info(f'Renamed to [lastname firstname]')
-    return 0
+    msg.press_continue()
 
 
 def javac_all():
@@ -444,9 +456,7 @@ if __name__ == '__main__':
     os.chdir(path_asmt)
     if precheck() != 0:
         msg.fatal('zip file or /submission not found')
-    if rename() != 0:
-        msg.warn('Already renamed. If not, remove /submission and run again')
-    msg.press_continue()
+    rename()
     if args.homework:
         hw()
     elif args.tstest:

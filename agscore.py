@@ -361,9 +361,9 @@ def run_custom(cmds):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-            description='The automatic grading script for CSC 116. '
-                        'GitHub Repository: '
-                        'https://github.com/apo5698/ags-cli')
+        description='The automatic grading script for CSC 116. '
+        'GitHub Repository: '
+        'https://github.com/apo5698/ags-cli')
     parser.add_argument('-e', '--exercise', help='grade an exercise')
     parser.add_argument('-p', '--project', help='grade a project')
     parser.add_argument('-hw', '--homework', help='grade a homework')
@@ -433,8 +433,8 @@ if __name__ == '__main__':
         util.read_config_asmt(f'{path_asmt.replace("content", "config")}.yaml')
     elif args.project:
         util.read_config_asmt(
-                f'{path_asmt.replace("content", "config")}_'
-                f'{util.current_semester()}.yaml')
+            f'{path_asmt.replace("content", "config")}_'
+            f'{util.current_semester()}.yaml')
 
     util.read_config_glob()
     path_cs = util.get_conf_glob('checkstyle')

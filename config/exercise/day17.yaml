@@ -1,0 +1,7 @@
+files:
+  - Append.java
+  - Copy.java
+custom run:
+  - java Append
+  - java Copy ../../infile.txt outfile.txt
+  - diff ../../infile.txt outfile.txt

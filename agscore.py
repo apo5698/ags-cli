@@ -64,8 +64,14 @@ def javac_all():
         os.chdir(student)
 
         msg.name(student.name)
-        for file in glob.glob('*.java', recursive=True):
-            javac(file)
+        files = util.get_conf_asmt('files')
+        if files:
+            for file in files:
+                javac(file)
+        else:
+            for file in glob.glob('*.java', recursive=True):
+                javac(file)
+
         os.chdir('..')
 
     msg.press_continue()
@@ -75,6 +81,12 @@ def javac(file, lib='.:../../../../../lib/*'):
     """ Compile a Java file to /bin. """
 
     msg.info(f'Compiling {msg.underline(file)}...', '')
+    if not os.path.exists(file):
+        print()
+        msg.fail(f'{msg.underline(file)} does not exist', '')
+        input()
+        return -1
+
     # src
     cmd = f'javac {file}'
     # test
@@ -132,15 +144,17 @@ def java_all():
         msg.name(student.name)
         os.chdir(student.name)
 
-        conf = util.get_conf_asmt('order')
-        if conf:
-            for item in conf:
-                if type(item) is dict:
-                    _item = next(iter(item))
-                    msg.info(f'Current grading: {msg.underline(_item)}')
-                    cmds = item.get(_item)
-                    run_custom(cmds)
-                    continue
+        cmds = util.get_conf_asmt('custom run')
+        files = util.get_conf_asmt('files')
+
+        if cmds:
+            run_custom(cmds)
+        elif files:
+            for f in files:
+                java(f)
+        else:
+            for f in glob.glob('*.java'):
+                java(f)
 
         os.chdir('..')
 
@@ -270,7 +284,7 @@ def ts_wbt(test):
         java(f, 'org.junit.runner.JUnitCore')
 
 
-def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
+def checkstyle(files, cs='~/cs-checkstyle/checkstyle'):
     sum = 0
     for f in files:
         cmd = f'{cs} {f} | grep -c ""'
@@ -284,46 +298,38 @@ def checkstyle(files, cs='~/Developer/NCSU/cs-checkstyle/checkstyle'):
 def hw(num):
     # TODO: Refactor
     msg.info('Checking homework...')
-    for root, dirs, files in os.walk('.'):
-        for student in sorted(dirs):
-            os.chdir(student)
-            msg.info('Opening...')
+    folders = glob.glob('* *')
+    for f in folders:
+        msg.name(f)
+        os.chdir(f)
 
-            if os.system(f'open Homework{num}.pdf &> /dev/null') != 0:
-                msg.fail(f'Homework{num}.pdf not found.')
-                msg.info('Possible submission file:')
-                for root1, dirs1, files1 in os.walk('.'):
-                    for i, f in enumerate(files1):
-                        msg.warn_index(i + 1, f)
-                    skip_index = len(files1) + 1
-                    msg.warn_index(skip_index, 'Skip')
-                    msg.info('Select a file to open: ', '')
-                    item = msg.ask_index(1, skip_index)
-                    if item == skip_index:
-                        msg.warn('Skipped', '')
-                        break
-                    while os.system(
-                            f'open \'{files1[item - 1]}\' &> /dev/null') != 0:
-                        msg.fail(
-                            f'No application can'
-                            f' open {msg.underline(files1[item - 1])}')
-                        for i, f in enumerate(files1):
-                            msg.warn_index(i + 1, f)
-                        msg.warn_index(skip_index, 'Skip')
-                        msg.info('Select a file to open: ', '')
-                        item = msg.ask_index(1, skip_index)
-                        if item == skip_index:
-                            msg.warn('Skipped', '')
-                            break
-                    msg.info('Opening')
-            os.chdir('..')
-            input()
+        files = glob.glob('*.*')
+        num = len(files)
+        if num == 0:
+            msg.fail('No submission')
+        elif num == 1:
+            pdf = files[0]
+            msg.info(f'Opening {msg.underline(pdf)}...')
+            sp.Popen(f'{default_open} \"{pdf}\"', shell=True)
+        else:
+            msg.warn(f'Multiple files found (total {num}):')
+            msg.index_list(files)
+            print('Select a file to open: ', end='')
+            i = msg.ask_index(0, num)
+            if 0 < i < num:
+                pdf = files[i]
+                msg.info(f'Opening {msg.underline(pdf)}...')
+                sp.Popen(f'{default_open} \"{pdf}\"', shell=True)
+
+        input()
+        os.chdir('..')
 
 
 def run_custom(cmds):
     for c in cmds:
         msg.info(f'Running {msg.underline(c)}')
         while sp.call(c, shell=True) != 0:
+            print()
             msg.fail(f'Failed to run {msg.underline(c)}')
             if not msg.ask_retry():
                 print()
@@ -381,26 +387,30 @@ if __name__ == '__main__':
     asmt_name, asmt_cat = '', ''
     asmt_num = 0
     if args.exercise:
-        asmt_cat = 'exercises'
+        asmt_cat = 'exercise'
         asmt_name = 'day'
         asmt_num = args.exercise.zfill(2)
     elif args.project:
-        asmt_cat = 'projects'
+        asmt_cat = 'project'
         asmt_name = 'p'
         asmt_num = args.project
     elif args.homework:
         asmt_cat = 'homework'
         asmt_name = 'hw'
-        args.num = args.homework
+        asmt_num = args.homework
     else:
         msg.fatal('Invalid arguments. Use -h or --help for usage.')
-    asmt_disp_name = f'{asmt_cat.capitalize()[:-1]} {asmt_num}'
+    asmt_disp_name = f'{asmt_cat.capitalize()} {asmt_num}'
 
     # Path and config
     path_asmt = os.path.join('content', asmt_cat, f'{asmt_name}{asmt_num}')
-    path_asmt_conf = f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml'
+    if args.exercise:
+        util.read_config_asmt(f'{path_asmt.replace("content", "config")}.yaml')
+    elif args.project:
+        util.read_config_asmt(
+            f'{path_asmt.replace("content", "config")}_{util.current_semester()}.yaml')
+
     util.read_config_glob()
-    util.read_config_asmt(path_asmt_conf)
     path_cs = util.get_conf_glob('checkstyle')
     path_lib = util.get_conf_glob('lib')
     default_open = util.get_conf_glob('open')
@@ -414,7 +424,7 @@ if __name__ == '__main__':
         input()
     if args.homework:
         hw(args.homework)
-    if args.tstest:
+    elif args.tstest:
         ts_test()
     else:
         if not args.nocompile:

@@ -120,3 +120,11 @@ def ask_index(start, end):
             break
         fail(f'Invalid option (index out of range): {option}')
     return option
+
+
+def index_list(list):
+    s = 0
+    for i, l in enumerate(list):
+        s += 1
+        print(f'   [{i}] {underline(l)}')
+    print(f'   [{s}] Skip')

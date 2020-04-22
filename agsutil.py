@@ -65,6 +65,8 @@ def get_conf_glob(setting):
 
 def get_conf_asmt(setting=None):
     """ Return the value of an item in assignment settings. """
+    if __assignment_config__ is None:
+        return None
     if setting is None:
         print(__assignment_config__)
     return __assignment_config__.get(setting)
@@ -88,14 +90,14 @@ def init(force):
             shutil.rmtree(d, ignore_errors=True)
         os.mkdir(d)
     # Day 1 to 27
-    for i in range(1, 28):
-        d = f'content/exercises/day{str(i).zfill(2)}'
+    for i in range(1, 26):
+        d = f'content/exercise/day{str(i).zfill(2)}'
         if os.path.exists(d) and force:
             shutil.rmtree(d, ignore_errors=True)
         os.mkdir(d)
     # Day 1 to 6
     for i in range(1, 7):
-        d = f'content/projects/p{str(i)}'
+        d = f'content/project/p{str(i)}'
         if os.path.exists(d) and force:
             shutil.rmtree(d, ignore_errors=True)
         os.mkdir(d)

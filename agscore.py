@@ -112,8 +112,7 @@ def javac(file, lib='.:../../../../../lib/*'):
 
     if rc != 0:
         print()
-        msg.fail(f'Failed to compile {msg.underline(file)} by using:')
-        print(f'       {cmd}')
+        msg.fail(f'Failed to compile by {msg.underline(cmd)}')
         sp.Popen([default_open, file])
         if msg.ask_retry():
             javac(file)
@@ -214,9 +213,10 @@ def ts_test():
                 if cs == 0:
                     msg.info('No checkstyle error found')
                 else:
-                    msg.warn(f'{cs} checkstyle errors found')
+                    msg.textbar('Total')
+                    print(msg.align_right(cs, 3))
 
-        msg.info('Finish TS testing for current student')
+        msg.info('Testing done')
         msg.press_continue()
         os.chdir('..')
 

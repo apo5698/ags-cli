@@ -74,7 +74,7 @@ def warn_index(index, msg, color=style.color.yellow):
 
 def bold(msg):
     """ Return the bold message. """
-    return style.stylize(style.font.BOLD, msg)
+    return style.stylize(style.font.bold, msg)
 
 
 def underline(msg):

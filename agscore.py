@@ -41,7 +41,7 @@ def rename():
     moodle_sub_specifier = '_assignsubmission_file_'
 
     msg.info('Renaming...')
-    g = glob.glob(f'*{moodle_sub_specifier}')
+    g = glob.glob(f'submission/*{moodle_sub_specifier}')
     if len(g) == 0:
         return -1
 

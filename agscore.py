@@ -122,15 +122,14 @@ def javac(file, lib='.:../../../../../lib/*'):
     return rc
 
 
-def java(file, arg=''):
+def java(file, arg='', arg2=''):
     """ Run a compiled Java program. """
     # TODO: Refactor
 
     msg.info(f'Running {file}...')
-    cmd = f'java -cp ".:*" {arg} {file.replace(".java", "")}'
+    cmd = f'java -cp ".:*" {arg} {file.replace(".java", "")} {arg2}'
     if os.system(cmd) != 0:
-        msg.fail(f'Failed to run {file} by using:')
-        print(f'       {" ".join(cmd.split())}')
+        msg.fail(f'Failed to run by {msg.underline(" ".join(cmd.split()))}')
         if msg.ask_retry():
             java(file)
 
@@ -226,22 +225,23 @@ def ts_test():
 def ts_wce():
     msg.info('Compiling files...')
     msg.info(f'Current grading: {msg.underline("src")}')
+    arg2 = args.argument if args.argument else ''
     for f in util.get_conf_asmt('src'):
         javac(f, '.:*')
-        java(f)
+        java(f, arg2=arg2)
     msg.press_continue()
     msg.info(f'Current grading: {msg.underline("test")}')
     for f in util.get_conf_asmt('test'):
         javac(f, '.:*')
-        java(f, 'org.junit.runner.JUnitCore')
+        java(f, arg='org.junit.runner.JUnitCore')
     msg.press_continue()
 
 
 def ts_tsbbt():
     msg.info('Compiling TS_BBT...')
-    for f in sorted(glob.glob('TS*BB*.java')):
+    for f in sorted(glob.glob('TS_*_BB_Test.java')):
         javac(f, '.:*')
-        java(f, 'org.junit.runner.JUnitCore')
+        java(f, arg='org.junit.runner.JUnitCore')
     msg.press_continue()
 
 
@@ -390,6 +390,8 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument('-t', '--tstest',
                         help='teaching staff tests provided')
+    parser.add_argument('-a', '--argument',
+                        help='add argument for running src')
     parser.add_argument('-nc', '--nocompile',
                         help='do not compile',
                         action='store_true')

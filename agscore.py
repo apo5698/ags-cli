@@ -164,20 +164,19 @@ def ts_test():
     """ Run all teaching staff tests. """
 
     msg.info('Running teaching staff tests...')
-    g = glob.glob(args.tstest)
-    if args.tstest not in g:
-        with zipfile.ZipFile(args.tstest) as zf:
-            msg.info(f'Extracting {args.tstest}...')
-            zf.extractall('ts')
+    with zipfile.ZipFile(args.tstest) as zf:
+        msg.info(f'Extracting {args.tstest}...')
+        zf.extractall('ts')
 
-    for student in sorted(os.scandir('.'), key=lambda s: s.name):
-        if not student.is_dir():
-            continue
-        os.chdir(student.name)
-        print(msg.name(student.name))
+    ts_path = os.path.abspath('ts')
+    os.chdir('submission')
+
+    for student in sorted(glob.glob('* *')):
+        os.chdir(student)
+        print(msg.name(student))
 
         msg.info('Copying TS files...')
-        distutils.dir_util.copy_tree('../../files', '.')
+        distutils.dir_util.copy_tree(ts_path, '.')
 
         src = util.get_conf_asmt('src')
         for f in src:

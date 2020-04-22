@@ -289,15 +289,15 @@ def checkstyle(src, test, cs='~/cs-checkstyle/checkstyle'):
     for f in src:
         msg.textbar(f)
         cmd = f'{cs} {f} | grep -c ""'
-        proc = sp.run(cmd, capture_output=True, shell=True, text=True)
+        proc = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
         num = int(proc.stdout) - 4
         total += num
         print(msg.align_right(num, 3))
     # Ignore magic numbers for test files
     for f in test:
         msg.textbar(f)
-        cmd = f'{cs} {f} | grep -v "magic number" -c'
-        proc = sp.run(cmd, capture_output=True, shell=True, text=True)
+        cmd = f'{cs} {f} | grep -v "is a magic number" -c'
+        proc = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
         num = int(proc.stdout) - 4
         total += num
         print(msg.align_right(num, 3))

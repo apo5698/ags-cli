@@ -5,7 +5,8 @@ if ! python3 --version; then
     exit 1
 fi
 
-git fetch origin
-git pull
-
-python3 agscore.py $@
+agsdir=$(dirname $0)
+echo "Checking for updates..."
+git -C $agsdir fetch origin
+git -C $agsdir pull
+python3 $agsdir/agscore.py $@

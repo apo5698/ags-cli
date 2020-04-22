@@ -31,7 +31,7 @@ def precheck():
         if len(g) == 1:
             with zipfile.ZipFile(g[0]) as file:
                 file.extractall('submission')
-    os.chdir('submission')
+
     return 0
 
 

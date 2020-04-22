@@ -1,7 +1,8 @@
 #!/bin/bash
 
-if ! python3 --version; then
-    echo "ver. >= python3.6 required"
+pyver="$(python3 -V 2>&1)"
+if [ $? -ne 0 ]; then
+    echo "Python 3 is not installed"
     exit 1
 fi
 

@@ -4,6 +4,7 @@ import glob
 import os
 import shutil
 import subprocess as sp
+import sys
 import webbrowser
 import zipfile
 
@@ -372,6 +373,11 @@ def run_custom(cmds):
 
 
 if __name__ == '__main__':
+    if sys.hexversion < 0x03060000:
+        print('Python version >= 3.6 is required')
+        exit(1)
+    os.chdir(os.path.dirname(__file__))
+
     parser = argparse.ArgumentParser(
         description='The automatic grading script for CSC 116. '
         'GitHub Repository: '

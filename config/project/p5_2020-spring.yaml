@@ -1,0 +1,20 @@
+src:
+  - ImageViewer.java
+test:
+  - ImageViewerTest.java
+order:
+  - wce
+  # - tsbbt
+  - custom run:
+      - javac -cp .:* *.java
+      - java -cp .:* TS_ImageViewer_BB_Test
+  - tswbt
+  - custom run:
+      - java -cp .:* org.junit.runner.JUnitCore TS_ImageViewer_WB_DisplayImage_Test
+  - bbt
+  - custom run:
+      - sed 's/ImageViewer/TS_ImageViewer/g' ImageViewerTest.java > TS_Student_ImageViewerTest.java
+      - sed -i 's/TS_ImageViewerTest/TS_Student_ImageViewerTest/' TS_Student_ImageViewerTest.java
+      - javac -cp .:* TS_Student_ImageViewerTest.java
+      - java -cp .:* org.junit.runner.JUnitCore TS_Student_ImageViewerTest
+  - style

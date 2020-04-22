@@ -47,14 +47,16 @@ def warn(msg, end='\n', color=style.color.yellow):
     print(f'{style.stylize(color, f"WARN")}  {msg}', end=end, flush=True)
 
 
-def name(namestr, swap=False, end='\n'):
+def name(name_, swap=False, end='\n'):
     """ Return the name in brackets. For example:\n
     ```text
     [abc def]
     [abc-def ghi]
     ```
     """
-    return ' '.join(reversed(namestr.split(' '))) if swap else f'[{namestr}]'
+    name_ = name_.split('/')[1] if 'submission/' in name_ else name_
+    name_ = ' '.join(reversed(name_.split(' '))) if swap else name_
+    return f'[{name_}]'
 
 
 def press_continue(button='return'):
@@ -72,7 +74,7 @@ def warn_index(index, msg, color=style.color.yellow):
 
 def bold(msg):
     """ Return the bold message. """
-    return style.stylize(style.BOLD, msg)
+    return style.stylize(style.font.BOLD, msg)
 
 
 def underline(msg):
@@ -80,16 +82,16 @@ def underline(msg):
     return style.stylize(style.font.underline, msg)
 
 
-def ask_yn(msg, msgtype='info'):
+def ask_yn(msg, type_='info'):
     """ Prompts the user for yes (Y/y) or no (N/n).
     Returns `True` if entering Y or y, `False` otherwise.
     """
     text = f'{msg} [Y/n]: '
-    if msgtype == 'info':
+    if type_ == 'info':
         info(text, '')
-    elif msgtype == 'warn':
+    elif type_ == 'warn':
         warn(text, '')
-    elif msgtype == 'fail':
+    elif type_ == 'fail':
         fail(text, '')
 
     option = input().lower()

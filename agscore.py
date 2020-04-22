@@ -183,9 +183,6 @@ def ts_test():
             sp.Popen([default_open, f])
 
         test = util.get_conf_asmt('test')
-        for f in test:
-            msg.info(f'Opening {msg.underline(f)}...')
-            sp.Popen([default_open, f])
 
         for item in util.get_conf_asmt('order'):
             # Custom run is a dict: {'custom run' : [..., ...]}
@@ -449,7 +446,7 @@ if __name__ == '__main__':
         msg.fatal('zip file or /submission not found')
     if rename() != 0:
         msg.warn('Already renamed. If not, remove /submission and run again')
-        msg.press_continue()
+    msg.press_continue()
     if args.homework:
         hw()
     elif args.tstest:
